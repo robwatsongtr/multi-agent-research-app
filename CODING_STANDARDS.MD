@@ -4,7 +4,9 @@
 
 - **Separation of concerns**: Maintain clear separation in both files and directories.
 
-- **Clean code**: Keep code clean and readable. Always have one space above a return statement. Keep methods/functions short when possible
+- **Clean code**: Keep code clean and readable. Always have one space above a return statement. Keep methods/functions short when possible. Separate function/method calls from return statements - don't combine them on one line.
+  - ✅ Good: `response = api.call()\n\nreturn response`
+  - ❌ Bad: `return api.call()`
 
 - **Use classes**: Organize functionality with classes to reduce code duplication if possible.
 

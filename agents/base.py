@@ -1,4 +1,6 @@
-"""Base agent class for multi-agent research system."""
+"""
+Base agent class for multi-agent research system.
+"""
 
 from typing import Any, Optional
 from anthropic import Anthropic
@@ -66,7 +68,9 @@ class BaseAgent:
         if tools is not None:
             params["tools"] = tools
 
-        return self.client.messages.create(**params)
+        response = self.client.messages.create(**params)
+
+        return response 
 
     def parse_response(self, message: Message) -> str:
         """

@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""
+CLI entry point for the multi-agent research system.
+
+Usage:
+    python main.py "Your research query here"
+"""
+
+import sys
+from anthropic import Anthropic
+
+from config.settings import load_prompts, get_api_key, get_model
+from agents.coordinator import CoordinatorAgent
+
+
+def main() -> None:
+    """Main entry point for the CLI."""
+    # Check for query argument
+    if len(sys.argv) < 2:
+        print("Usage: python main.py \"Your research query here\"")
+        print("\nExample:")
+        print('  python main.py "What are the latest developments in quantum computing?"')
+        sys.exit(1)
+
+    query = sys.argv[1]
+
+    try:
+        # Load configuration
+        print("Loading configuration...")
+        api_key = get_api_key()
+        model = get_model()
+        prompts = load_prompts()
+
+        # Initialize Anthropic client
+        client = Anthropic(api_key=api_key)
+
+        # Create Coordinator agent
+        coordinator = CoordinatorAgent(
+            client=client,
+            system_prompt=prompts['coordinator']
+        )
+
+        # Break down query into subtasks
+        print(f"\nResearch Query: {query}")
+        print("\nCoordinating research subtasks...")
+
+        subtasks = coordinator.coordinate(query)
+
+        # Display results
+        print("\n" + "="*60)
+        print("RESEARCH SUBTASKS")
+        print("="*60)
+
+        for i, subtask in enumerate(subtasks, 1):
+            print(f"\n{i}. {subtask}")
+
+        print("\n" + "="*60)
+        print(f"\nGenerated {len(subtasks)} research subtasks")
+
+    except ValueError as e:
+        print(f"\n❌ Configuration Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except RuntimeError as e:
+        print(f"\n❌ Runtime Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n❌ Unexpected Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
