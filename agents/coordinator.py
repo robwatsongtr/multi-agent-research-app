@@ -1,6 +1,7 @@
 """Coordinator agent that breaks queries into research subtasks."""
 
 import json
+import re
 from typing import Any
 from anthropic import Anthropic
 
@@ -50,15 +51,28 @@ class CoordinatorAgent(BaseAgent):
             # Parse the response to get text content
             response_text = self.parse_response(response)
 
-            # Strip markdown code blocks if present
-            response_text = response_text.strip()
-            if response_text.startswith("```json"):
-                response_text = response_text[7:]
-            elif response_text.startswith("```"):
-                response_text = response_text[3:]
-            if response_text.endswith("```"):
-                response_text = response_text[:-3]
-            response_text = response_text.strip()
+            # # Debug: print raw response
+            # print(f"\nDEBUG - Raw response from Claude:")
+            # print(f"{response_text}")
+            # print()
+
+            # Strip markdown code blocks - find content between ``` markers
+            if '```' in response_text:
+                # Extract everything between first ``` and last ```
+                parts = response_text.split('```')
+                if len(parts) >= 3:
+                    # parts[1] is the content between first and second ```
+                    response_text = parts[1]
+                    # Remove 'json' if it's at the start
+                    if response_text.strip().startswith('json'):
+                        response_text = response_text.strip()[4:]
+                    response_text = response_text.strip()
+            else:
+                response_text = response_text.strip()
+
+            # print(f"DEBUG - After stripping markdown:")
+            # print(f"{response_text}")
+            # print()
 
             # Parse JSON array of subtasks
             subtasks = json.loads(response_text)

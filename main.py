@@ -3,14 +3,15 @@
 CLI entry point for the multi-agent research system.
 
 Usage:
-    python main.py "Your research query here"
+    python3 main.py "Your research query here"
 """
 
 import sys
+import json
 from anthropic import Anthropic
 
 from config.settings import load_prompts, get_api_key, get_model
-from agents.coordinator import CoordinatorAgent
+from orchestration.workflow import run_research_workflow
 
 
 def main() -> None:
@@ -34,28 +35,44 @@ def main() -> None:
         # Initialize Anthropic client
         client = Anthropic(api_key=api_key)
 
-        # Create Coordinator agent
-        coordinator = CoordinatorAgent(
+        # Run full research workflow
+        print(f"\nResearch Query: {query}")
+        print("\nRunning research workflow...")
+        print("  1. Coordinating research subtasks...")
+
+        result = run_research_workflow(
+            query=query,
             client=client,
-            system_prompt=prompts['coordinator']
+            coordinator_prompt=prompts['coordinator'],
+            researcher_prompt=prompts['researcher'],
+            tools=None  # Note: web_search tool not yet integrated
         )
 
-        # Break down query into subtasks
-        print(f"\nResearch Query: {query}")
-        print("\nCoordinating research subtasks...")
-
-        subtasks = coordinator.coordinate(query)
-
-        # Display results
+        # Display subtasks
         print("\n" + "="*60)
         print("RESEARCH SUBTASKS")
         print("="*60)
 
-        for i, subtask in enumerate(subtasks, 1):
+        for i, subtask in enumerate(result['subtasks'], 1):
             print(f"\n{i}. {subtask}")
 
+        # Display research results
         print("\n" + "="*60)
-        print(f"\nGenerated {len(subtasks)} research subtasks")
+        print("RESEARCH FINDINGS")
+        print("="*60)
+
+        for i, research in enumerate(result['research_results'], 1):
+            print(f"\n[Subtask {i}]: {research['subtask']}")
+            print(f"Findings: {len(research['findings'])}")
+
+            for j, finding in enumerate(research['findings'], 1):
+                print(f"\n  {j}. {finding['claim']}")
+                print(f"     Source: {finding['source']}")
+                if finding.get('details'):
+                    print(f"     Details: {finding['details']}")
+
+        print("\n" + "="*60)
+        print(f"Completed research on {len(result['subtasks'])} subtasks")
 
     except ValueError as e:
         print(f"\n❌ Configuration Error: {e}", file=sys.stderr)
