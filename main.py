@@ -38,7 +38,6 @@ def main() -> None:
         # Run full research workflow
         print(f"\nResearch Query: {query}")
         print("\nRunning research workflow...")
-        print("  1. Coordinating research subtasks...")
 
         result = run_research_workflow(
             query=query,
