@@ -5,6 +5,7 @@ from anthropic import Anthropic
 
 from agents.coordinator import CoordinatorAgent
 from agents.researcher import ResearcherAgent
+from tools import WEB_SEARCH_TOOL, execute_web_search
 
 
 def run_research_workflow(
@@ -12,7 +13,7 @@ def run_research_workflow(
     client: Anthropic,
     coordinator_prompt: str,
     researcher_prompt: str,
-    tools: list[dict[str, Any]] = None
+    tavily_api_key: str
 ) -> dict[str, Any]:
     """
     Execute the full research workflow.
@@ -22,7 +23,7 @@ def run_research_workflow(
         client: Anthropic API client
         coordinator_prompt: System prompt for coordinator
         researcher_prompt: System prompt for researcher
-        tools: Optional tools (e.g., web_search) for researcher
+        tavily_api_key: Tavily API key for web search
 
     Returns:
         Dictionary with structure:
@@ -32,6 +33,13 @@ def run_research_workflow(
             "research_results": list[dict]
         }
     """
+    # Create tool executor function
+    def tool_executor(tool_name: str, tool_input: dict[str, Any]) -> Any:
+        """Execute tools requested by the researcher agent."""
+        if tool_name == "web_search":
+            return execute_web_search(tool_input["query"], tavily_api_key)
+        else:
+            raise ValueError(f"Unknown tool: {tool_name}")
     # Step 1: Coordinator breaks down query into subtasks
     coordinator = CoordinatorAgent(client, coordinator_prompt)
     subtasks = coordinator.coordinate(query)
@@ -41,7 +49,11 @@ def run_research_workflow(
     research_results = []
 
     for subtask in subtasks:
-        findings = researcher.research(subtask, tools=tools)
+        findings = researcher.research(
+            subtask,
+            tools=[WEB_SEARCH_TOOL],
+            tool_executor=tool_executor
+        )
         research_results.append(findings)
 
     return {

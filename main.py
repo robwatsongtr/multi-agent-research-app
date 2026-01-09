@@ -10,7 +10,7 @@ import sys
 import json
 from anthropic import Anthropic
 
-from config.settings import load_prompts, get_api_key, get_model
+from config.settings import load_prompts, get_api_key, get_model, get_tavily_api_key
 from orchestration.workflow import run_research_workflow
 
 
@@ -29,6 +29,7 @@ def main() -> None:
         # Load configuration
         print("Loading configuration...")
         api_key = get_api_key()
+        tavily_api_key = get_tavily_api_key()
         model = get_model()
         prompts = load_prompts()
 
@@ -44,7 +45,7 @@ def main() -> None:
             client=client,
             coordinator_prompt=prompts['coordinator'],
             researcher_prompt=prompts['researcher'],
-            tools=None  # Note: web_search tool not yet integrated
+            tavily_api_key=tavily_api_key
         )
 
         # Display subtasks

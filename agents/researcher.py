@@ -28,7 +28,8 @@ class ResearcherAgent(BaseAgent):
 
     def research( self,
         subtask: str,
-        tools: Optional[list[dict[str, Any]]] = None
+        tools: Optional[list[dict[str, Any]]] = None,
+        tool_executor: Optional[Any] = None
     ) -> dict[str, Any]:
         """
         Research a specific subtask and return findings.
@@ -36,6 +37,7 @@ class ResearcherAgent(BaseAgent):
         Args:
             subtask: The research subtask to investigate
             tools: Optional list of tools (e.g., web_search) the agent can use
+            tool_executor: Optional function to execute tools
 
         Returns:
             Dictionary with structure:
@@ -60,7 +62,8 @@ class ResearcherAgent(BaseAgent):
                 user_message=subtask,
                 max_tokens=4096,
                 temperature=1.0,
-                tools=tools
+                tools=tools,
+                tool_executor=tool_executor
             )
 
             # Parse the response to get text content

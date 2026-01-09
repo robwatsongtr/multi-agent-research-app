@@ -59,3 +59,25 @@ def get_model() -> str:
         Model identifier (can be overridden with CLAUDE_MODEL env var)
     """
     return os.getenv("CLAUDE_MODEL", "claude-sonnet-4-5-20250929")
+
+
+def get_tavily_api_key() -> str:
+    """
+    Get Tavily API key from environment.
+
+    Returns:
+        The Tavily API key
+
+    Raises:
+        ValueError: If TAVILY_API_KEY is not set
+    """
+    api_key = os.getenv("TAVILY_API_KEY")
+
+    if not api_key:
+        raise ValueError(
+            "TAVILY_API_KEY environment variable not set. "
+            "Get a free key at https://tavily.com and set it with: "
+            "export TAVILY_API_KEY='your-key-here'"
+        )
+
+    return api_key
