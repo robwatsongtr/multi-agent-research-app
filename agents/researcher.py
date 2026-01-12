@@ -69,10 +69,6 @@ class ResearcherAgent(BaseAgent):
             # Parse the response to get text content
             response_text = self.parse_response(response)
 
-            # print(f"\nDEBUG - Researcher raw response:")
-            # print(f"{response_text}")
-            # print()
-
             # Strip markdown code blocks - find content between ``` markers
             if '```' in response_text:
                 # Extract everything between first ``` and last ```
@@ -86,12 +82,7 @@ class ResearcherAgent(BaseAgent):
                     response_text = response_text.strip()
             else:
                 response_text = response_text.strip()
-
-            # print(f"DEBUG - Researcher after stripping:")
-            # print(f"{response_text}")
-            # print()
-
-            # Parse JSON
+                
             result = json.loads(response_text)
 
         except json.JSONDecodeError as e:

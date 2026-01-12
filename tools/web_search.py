@@ -3,7 +3,6 @@
 from typing import Any
 from tavily import TavilyClient
 
-
 # Tool schema for Anthropic API
 WEB_SEARCH_TOOL = {
     "name": "web_search",
