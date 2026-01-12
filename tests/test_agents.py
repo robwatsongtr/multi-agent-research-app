@@ -40,6 +40,7 @@ class TestBaseAgent:
         """Test call_claude makes correct API call without tools."""
         client = Mock()
         mock_response = Mock(spec=Message)
+        mock_response.stop_reason = "end_turn"
         client.messages.create.return_value = mock_response
 
         agent = BaseAgent(client, "Test prompt")
@@ -59,6 +60,7 @@ class TestBaseAgent:
         """Test call_claude makes correct API call with tools."""
         client = Mock()
         mock_response = Mock(spec=Message)
+        mock_response.stop_reason = "end_turn"
         client.messages.create.return_value = mock_response
 
         agent = BaseAgent(client, "Test prompt")
@@ -143,6 +145,7 @@ class TestCoordinatorAgent:
         mock_text_block.text = '["Subtask 1", "Subtask 2", "Subtask 3"]'
         mock_message = Mock(spec=Message)
         mock_message.content = [mock_text_block]
+        mock_message.stop_reason = "end_turn"
         client.messages.create.return_value = mock_message
 
         result = agent.coordinate("Test query")
@@ -159,6 +162,7 @@ class TestCoordinatorAgent:
         mock_text_block.text = '```json\n["Subtask 1", "Subtask 2"]\n```'
         mock_message = Mock(spec=Message)
         mock_message.content = [mock_text_block]
+        mock_message.stop_reason = "end_turn"
         client.messages.create.return_value = mock_message
 
         result = agent.coordinate("Test query")
@@ -174,6 +178,7 @@ class TestCoordinatorAgent:
         mock_text_block.text = '["Only one subtask"]'
         mock_message = Mock(spec=Message)
         mock_message.content = [mock_text_block]
+        mock_message.stop_reason = "end_turn"
         client.messages.create.return_value = mock_message
 
         with pytest.raises(ValueError, match="Expected 2-4 subtasks, got 1"):
@@ -188,6 +193,7 @@ class TestCoordinatorAgent:
         mock_text_block.text = '["Task 1", "Task 2", "Task 3", "Task 4", "Task 5"]'
         mock_message = Mock(spec=Message)
         mock_message.content = [mock_text_block]
+        mock_message.stop_reason = "end_turn"
         client.messages.create.return_value = mock_message
 
         with pytest.raises(ValueError, match="Expected 2-4 subtasks, got 5"):
@@ -202,6 +208,7 @@ class TestCoordinatorAgent:
         mock_text_block.text = '["Task 1", 123, "Task 3"]'
         mock_message = Mock(spec=Message)
         mock_message.content = [mock_text_block]
+        mock_message.stop_reason = "end_turn"
         client.messages.create.return_value = mock_message
 
         with pytest.raises(ValueError, match="All subtasks must be strings"):
@@ -216,6 +223,7 @@ class TestCoordinatorAgent:
         mock_text_block.text = 'Not valid JSON'
         mock_message = Mock(spec=Message)
         mock_message.content = [mock_text_block]
+        mock_message.stop_reason = "end_turn"
         client.messages.create.return_value = mock_message
 
         with pytest.raises(ValueError, match="Failed to parse response as JSON"):
