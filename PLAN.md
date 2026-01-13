@@ -71,6 +71,50 @@ README.md
 
 **Success Criteria**: Can research a query and get back findings with sources for each subtask
 
+### Phase 2.5: Progress Logging (Current)
+**Goal**: Add real-time progress updates during research execution
+
+**Context**: Research workflows can take several minutes with coordinator and researcher making multiple API calls. Users need visibility into what's happening.
+
+**Tasks**:
+1. Configure Python logging module in `main.py`
+   - Add logging setup with clean format: `[%(levelname)s] %(message)s`
+   - Add `--verbose` CLI flag to toggle between INFO and DEBUG levels
+   - Default to INFO level (high-level progress only)
+   - Keep existing print statements for final results display
+2. Add logging to `orchestration/workflow.py`
+   - INFO: "Breaking query into subtasks..."
+   - INFO: "Starting research on X subtasks..."
+   - INFO: "[X/Y] Researching subtask: {subtask}"
+   - INFO: "Completed subtask X/Y"
+   - INFO: Tool executor: "Searching web for: {query}"
+   - DEBUG: Tool executor: "Found X results"
+3. Add logging to agents
+   - `coordinator.py`: INFO for "Coordinator analyzing query...", "Generated X subtasks"
+   - `researcher.py`: DEBUG for subtask processing details
+   - `base.py`: DEBUG for "Calling Claude API...", INFO for "Claude requested tool: {tool_name}"
+4. Add logging to `tools/web_search.py`
+   - DEBUG: "Executing Tavily search: {query}"
+   - ERROR: Search failures
+5. Test with and without `--verbose` flag
+6. Verify existing tests still pass
+
+**Technical Details**:
+- Use Python's built-in `logging` module (stdlib, no installation needed)
+- Logging outputs to stderr (best practice - separates diagnostic info from results)
+- Two log levels:
+  - INFO: Important progress updates user should see
+  - DEBUG: Detailed technical information for troubleshooting
+- Usage:
+  - `python main.py "query"` → Shows progress updates (INFO level)
+  - `python main.py "query" --verbose` → Shows detailed tracing (DEBUG level)
+
+**Success Criteria**:
+- Users see real-time progress updates during multi-minute research runs
+- Progress updates are informative but not overwhelming
+- `--verbose` flag provides detailed tracing for debugging
+- No disruption to existing functionality or test suite
+
 ### Phase 3: Synthesizer Agent
 **Goal**: Combine research findings into coherent output
 
