@@ -11,7 +11,13 @@ Every time you commit, the following checks run automatically:
 - Checks: `agents/`, `orchestration/`, `tools/`, `config/`, `main.py`
 - Fails if type errors are found
 
-### 2. **Code Quality Checks**
+### 2. **pytest (Test Suite)**
+- Runs all 31 tests automatically
+- Checks: `tests/test_agents.py`, `tests/test_researcher.py`, `tests/test_workflow.py`
+- Fails if any test fails
+- Uses arm64 architecture for compatibility
+
+### 3. **Code Quality Checks**
 - Trims trailing whitespace
 - Fixes end-of-file formatting
 - Validates YAML syntax
@@ -36,9 +42,17 @@ pre-commit install
 git add .
 git commit -m "Your message"
 
-# Pre-commit runs automatically
-# If checks fail, the commit is blocked
-# Fix the issues and try again
+# Pre-commit runs automatically:
+# ✓ mypy (type checking)
+# ✓ pytest (31 tests)
+# ✓ trim trailing whitespace
+# ✓ fix end of files
+# ✓ check yaml syntax
+# ✓ check for large files
+# ✓ check for merge conflicts
+
+# If all checks pass → commit succeeds ✅
+# If any check fails → commit is blocked, fix and try again ❌
 ```
 
 ### Manual (run before commit)
@@ -88,10 +102,10 @@ git commit -m "Your message"
 
 ## Notes
 
-- **pytest hook is currently disabled** due to venv architecture issues
-- To enable pytest on commit, uncomment the pytest section in `.pre-commit-config.yaml`
 - Pre-commit creates isolated environments for hooks (separate from your venv)
 - First run takes a few minutes to set up environments (cached after that)
+- pytest uses `arch -arm64` to ensure compatibility on Apple Silicon
+- All 31 tests run on every commit (~2 seconds)
 
 ## Updating Hooks
 
