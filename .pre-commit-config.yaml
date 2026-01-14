@@ -18,16 +18,14 @@ repos:
         files: ^(agents|orchestration|tools|config)/.*\.py$|^main\.py$
 
   # Run pytest
-  # Note: Commented out due to venv architecture issues
-  # Uncomment after fixing pydantic installation
-  # - repo: local
-  #   hooks:
-  #     - id: pytest
-  #       name: pytest (run tests)
-  #       entry: bash -c 'source venv/bin/activate && pytest tests/ -v'
-  #       language: system
-  #       pass_filenames: false
-  #       always_run: true
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest (run tests)
+        entry: bash -c 'arch -arm64 venv/bin/python -m pytest tests/ -v'
+        language: system
+        pass_filenames: false
+        always_run: true
 
   # Basic code quality checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
