@@ -18,6 +18,7 @@ All Python projects must include:
   - Configure in `.pre-commit-config.yaml`
   - Must include: mypy, pytest, trailing whitespace, end-of-file fixer
   - Use local hooks with `arch -arm64` for Python tools on Apple Silicon
+  - See @PRE_COMMIT_SETUP.MD for detailed setup and usage instructions
 
 ## Implementation Standards
 
