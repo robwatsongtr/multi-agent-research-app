@@ -18,10 +18,10 @@ class TestBaseAgent:
         client = Mock()
         system_prompt = "You are a test agent"
 
-        # Act 
+        # Act
         agent = BaseAgent(client, system_prompt)
 
-        # Assert 
+        # Assert
         assert agent.client == client
         assert agent.system_prompt == system_prompt
         assert agent.model == "claude-sonnet-4-5-20250929"

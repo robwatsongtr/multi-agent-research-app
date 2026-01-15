@@ -32,4 +32,3 @@
   - ✅ Use: `logging` configured to stderr
 
 - **Tool descriptions**: Make tool descriptions clear and specific - the LLM uses these to decide when to call tools.
-

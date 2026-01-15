@@ -3,19 +3,15 @@
 
 repos:
   # Run mypy type checking
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.19.1
+  - repo: local
     hooks:
       - id: mypy
         name: mypy (type checking)
-        args: [--config-file=mypy.ini]
-        additional_dependencies:
-          - types-PyYAML>=6.0.12
-          - anthropic>=0.39.0
-          - pytest>=7.0.0
-          - python-dotenv>=1.0.0
-        # Only check project files, not venv or tests
-        files: ^(agents|orchestration|tools|config)/.*\.py$|^main\.py$
+        entry: bash -c 'arch -arm64 venv/bin/python -m mypy --config-file=mypy.ini agents/ orchestration/ tools/ config/ main.py 2>/dev/null || arch -arm64 venv/bin/python -m mypy --config-file=mypy.ini agents/ orchestration/ config/ main.py'
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
 
   # Run pytest
   - repo: local

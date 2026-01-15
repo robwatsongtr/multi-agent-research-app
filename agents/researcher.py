@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Any, Optional
+from typing import Any, Optional, cast
 from anthropic import Anthropic
 
 from agents.base import BaseAgent
@@ -82,7 +82,7 @@ class ResearcherAgent(BaseAgent):
                     response_text = response_text.strip()
             else:
                 response_text = response_text.strip()
-                
+
             result = json.loads(response_text)
 
         except json.JSONDecodeError as e:
@@ -100,4 +100,4 @@ class ResearcherAgent(BaseAgent):
         if not isinstance(result["findings"], list):
             raise ValueError("findings must be a list")
 
-        return result
+        return cast(dict[str, Any], result)

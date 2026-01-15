@@ -63,7 +63,7 @@ class CoordinatorAgent(BaseAgent):
                     response_text = response_text.strip()
             else:
                 response_text = response_text.strip()
-                
+
             subtasks = json.loads(response_text)
 
         except json.JSONDecodeError as e:

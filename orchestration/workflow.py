@@ -40,7 +40,7 @@ def run_research_workflow(
             return execute_web_search(tool_input["query"], tavily_api_key)
         else:
             raise ValueError(f"Unknown tool: {tool_name}")
-        
+
     # Step 1: Coordinator breaks down query into subtasks
     coordinator = CoordinatorAgent(client, coordinator_prompt)
     subtasks = coordinator.coordinate(query)

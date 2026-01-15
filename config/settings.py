@@ -3,7 +3,7 @@
 import os
 import yaml
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -27,7 +27,7 @@ def load_prompts() -> dict[str, str]:
     with open(prompts_path, 'r') as f:
         prompts = yaml.safe_load(f)
 
-    return prompts
+    return cast(dict[str, str], prompts)
 
 
 def get_api_key() -> str:
