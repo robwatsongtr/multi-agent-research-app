@@ -8,14 +8,13 @@ Every time you commit, the following checks run automatically:
 
 ### 1. **mypy (Type Checking)**
 - Verifies all type hints are correct
-- Checks: `agents/`, `orchestration/`, `tools/`, `config/`, `main.py`
+- Checks your source directories
 - Fails if type errors are found
 
 ### 2. **pytest (Test Suite)**
-- Runs all 31 tests automatically
-- Checks: `tests/test_agents.py`, `tests/test_researcher.py`, `tests/test_workflow.py`
+- Runs all tests automatically
 - Fails if any test fails
-- Uses arm64 architecture for compatibility
+- Uses arm64 architecture for compatibility on Apple Silicon
 
 ### 3. **Code Quality Checks**
 - Trims trailing whitespace
@@ -44,7 +43,7 @@ git commit -m "Your message"
 
 # Pre-commit runs automatically:
 # ✓ mypy (type checking)
-# ✓ pytest (31 tests)
+# ✓ pytest (test suite)
 # ✓ trim trailing whitespace
 # ✓ fix end of files
 # ✓ check yaml syntax
@@ -105,7 +104,7 @@ git commit -m "Your message"
 - Pre-commit creates isolated environments for hooks (separate from your venv)
 - First run takes a few minutes to set up environments (cached after that)
 - pytest uses `arch -arm64` to ensure compatibility on Apple Silicon
-- All 31 tests run on every commit (~2 seconds)
+- All tests run on every commit
 
 ## Updating Hooks
 
