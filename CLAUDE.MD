@@ -1,12 +1,19 @@
 # Claude Code Guidelines
 
-## General Standards
+## Project References
 
-@CODING_STANDARDS.MD
+@CODING_STANDARDS.MD - Technical standards and requirements
+@PLAN.MD - Phased implementation plan
+
+## Development Workflow
+
+This project follows a phased, iterative development approach:
+- Work through features phase by phase as outlined in PLAN.MD
+- Complete each phase before moving to the next
+- Follow all technical standards defined in CODING_STANDARDS.MD
 
 ## Claude Code Behavior
 
 Do not ask follow up questions or ask if something "makes sense." Just execute the prompt.
 
 Do not ask any questions like "Ready to implement feature x....." at the end of responses.
-- PLAN.MD

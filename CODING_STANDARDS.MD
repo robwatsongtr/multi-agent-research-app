@@ -1,5 +1,24 @@
 # Coding Standards
 
+## Python Project Setup
+
+All Python projects must include:
+
+- **pytest**: Testing framework for all unit and integration tests
+  - Run tests with: `pytest tests/ -v`
+  - Configure in `pytest.ini` or `pyproject.toml`
+
+- **mypy**: Static type checker for type safety
+  - Run type checking with: `mypy src/` (or relevant source directories)
+  - Configure in `mypy.ini` with strict settings
+  - Use `arch -arm64` prefix on Apple Silicon Macs
+
+- **pre-commit**: Git hooks for automated quality checks
+  - Install hooks with: `pre-commit install`
+  - Configure in `.pre-commit-config.yaml`
+  - Must include: mypy, pytest, trailing whitespace, end-of-file fixer
+  - Use local hooks with `arch -arm64` for Python tools on Apple Silicon
+
 ## Implementation Standards
 
 - **Separation of concerns**: Maintain clear separation in both files and directories.
