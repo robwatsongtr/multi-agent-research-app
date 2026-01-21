@@ -2,10 +2,13 @@
 Base agent class for multi-agent research system.
 """
 
+import logging
 from typing import Any, Optional, Callable, cast
 from anthropic import Anthropic
 from anthropic.types import Message, MessageParam
 import json
+
+logger = logging.getLogger(__name__)
 
 class BaseAgent:
     """
@@ -79,6 +82,7 @@ class BaseAgent:
             if tools is not None:
                 api_params["tools"] = tools
 
+            logger.debug("Calling Claude API...")
             response = self.client.messages.create(**api_params)
 
             # Check if Claude wants to use a tool
@@ -97,6 +101,8 @@ class BaseAgent:
                         tool_input = block.input
                         tool_use_id = block.id
 
+                        logger.info(f"Claude requested tool: {tool_name}")
+
                         # Execute the tool
                         try:
                             result = tool_executor(tool_name, tool_input)
@@ -107,6 +113,7 @@ class BaseAgent:
                             })
                         except Exception as e:
                             # Return error to Claude
+                            logger.error(f"Tool execution failed: {e}")
                             tool_results.append({
                                 "type": "tool_result",
                                 "tool_use_id": tool_use_id,

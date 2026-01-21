@@ -1,7 +1,10 @@
 """Web search tool using Tavily API."""
 
+import logging
 from typing import Any
 from tavily import TavilyClient
+
+logger = logging.getLogger(__name__)
 
 # Tool schema for Anthropic API
 WEB_SEARCH_TOOL = {
@@ -45,11 +48,16 @@ def execute_web_search(query: str, api_key: str) -> list[dict[str, Any]]:
     client = TavilyClient(api_key=api_key)
 
     # Perform search with Tavily
-    response = client.search(
-        query=query,
-        search_depth="basic",  # or "advanced" for more thorough search
-        max_results=5
-    )
+    logger.debug(f"Executing Tavily search: {query}")
+    try:
+        response = client.search(
+            query=query,
+            search_depth="basic",  # or "advanced" for more thorough search
+            max_results=5
+        )
+    except Exception as e:
+        logger.error(f"Tavily search failed: {e}")
+        raise
 
     # Extract and format results
     results = []
@@ -60,5 +68,7 @@ def execute_web_search(query: str, api_key: str) -> list[dict[str, Any]]:
             "content": result.get("content", ""),
             "score": result.get("score", 0.0)
         })
+
+    logger.debug(f"Tavily returned {len(results)} results")
 
     return results

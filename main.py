@@ -4,10 +4,12 @@ CLI entry point for the multi-agent research system.
 
 Usage:
     python3 main.py "Your research query here"
+    python3 main.py "Your research query here" --verbose
 """
 
 import sys
 import json
+import logging
 from anthropic import Anthropic
 
 from config.settings import load_prompts, get_api_key, get_model, get_tavily_api_key
@@ -16,14 +18,24 @@ from orchestration.workflow import run_research_workflow
 
 def main() -> None:
     """Main entry point for the CLI."""
-    # Check for query argument
+    # Parse arguments
     if len(sys.argv) < 2:
-        print("Usage: python main.py \"Your research query here\"")
+        print("Usage: python main.py \"Your research query here\" [--verbose]")
         print("\nExample:")
         print('  python main.py "What are the latest developments in quantum computing?"')
+        print('  python main.py "What are the latest developments in quantum computing?" --verbose')
         sys.exit(1)
 
     query = sys.argv[1]
+    verbose = "--verbose" in sys.argv
+
+    # Configure logging
+    log_level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(
+        level=log_level,
+        format='[%(levelname)s] %(message)s',
+        stream=sys.stderr
+    )
 
     try:
         # Load configuration

@@ -1,11 +1,14 @@
 """Coordinator agent that breaks queries into research subtasks."""
 
+import logging
 import json
 import re
 from typing import Any
 from anthropic import Anthropic
 
 from agents.base import BaseAgent
+
+logger = logging.getLogger(__name__)
 
 
 class CoordinatorAgent(BaseAgent):
@@ -41,6 +44,7 @@ class CoordinatorAgent(BaseAgent):
             RuntimeError: If API call fails
         """
         try:
+            logger.info("Coordinator analyzing query...")
             # Call Claude with the user query
             response = self.call_claude(
                 user_message=query,
@@ -50,6 +54,7 @@ class CoordinatorAgent(BaseAgent):
 
             # Parse the response to get text content
             response_text = self.parse_response(response)
+            logger.debug(f"Coordinator response: {response_text[:100]}...")
 
             if '```' in response_text:
                 # Extract everything between first ``` and last ```

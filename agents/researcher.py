@@ -1,11 +1,14 @@
 """Researcher agent that executes research subtasks."""
 
+import logging
 import json
 import re
 from typing import Any, Optional, cast
 from anthropic import Anthropic
 
 from agents.base import BaseAgent
+
+logger = logging.getLogger(__name__)
 
 
 class ResearcherAgent(BaseAgent):
@@ -57,6 +60,7 @@ class ResearcherAgent(BaseAgent):
             RuntimeError: If API call fails
         """
         try:
+            logger.debug(f"Researcher processing subtask: {subtask[:50]}...")
             # Call Claude with the subtask
             response = self.call_claude(
                 user_message=subtask,
@@ -68,6 +72,7 @@ class ResearcherAgent(BaseAgent):
 
             # Parse the response to get text content
             response_text = self.parse_response(response)
+            logger.debug(f"Researcher response: {response_text[:100]}...")
 
             # Strip markdown code blocks - find content between ``` markers
             if '```' in response_text:
