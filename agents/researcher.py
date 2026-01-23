@@ -7,6 +7,7 @@ from typing import Any, Optional, cast
 from anthropic import Anthropic
 
 from agents.base import BaseAgent
+from agents.json_utils import parse_json_response
 
 logger = logging.getLogger(__name__)
 
@@ -74,32 +75,13 @@ class ResearcherAgent(BaseAgent):
             response_text = self.parse_response(response)
             logger.debug(f"Researcher response: {response_text[:100]}...")
 
-            # Strip markdown code blocks - find content between ``` markers
-            if '```' in response_text:
-                # Extract everything between first ``` and last ```
-                parts = response_text.split('```')
-                if len(parts) >= 3:
-                    # parts[1] is the content between first and second ```
-                    response_text = parts[1]
-                    # Remove 'json' if it's at the start
-                    if response_text.strip().startswith('json'):
-                        response_text = response_text.strip()[4:]
-                    response_text = response_text.strip()
-            else:
-                response_text = response_text.strip()
-
-            result = json.loads(response_text)
-
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Failed to parse response as JSON: {e}") from e
+            # Use the shared JSON parsing utility
+            result = parse_json_response(
+                response_text,
+                expected_fields=["subtask", "findings"]
+            )
         except Exception as e:
             raise RuntimeError(f"Research failed: {e}") from e
-
-        # Validate required fields
-        if "subtask" not in result:
-            raise ValueError("Response missing required field: subtask")
-        if "findings" not in result:
-            raise ValueError("Response missing required field: findings")
 
         # Validate findings is a list
         if not isinstance(result["findings"], list):

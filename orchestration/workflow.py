@@ -6,6 +6,7 @@ from anthropic import Anthropic
 
 from agents.coordinator import CoordinatorAgent
 from agents.researcher import ResearcherAgent
+from agents.synthesizer import SynthesizerAgent
 from tools import WEB_SEARCH_TOOL, execute_web_search
 
 logger = logging.getLogger(__name__)
@@ -16,6 +17,7 @@ def run_research_workflow(
     client: Anthropic,
     coordinator_prompt: str,
     researcher_prompt: str,
+    synthesizer_prompt: str,
     tavily_api_key: str
 ) -> dict[str, Any]:
     """
@@ -26,6 +28,7 @@ def run_research_workflow(
         client: Anthropic API client
         coordinator_prompt: System prompt for coordinator
         researcher_prompt: System prompt for researcher
+        synthesizer_prompt: System prompt for synthesizer
         tavily_api_key: Tavily API key for web search
 
     Returns:
@@ -33,7 +36,8 @@ def run_research_workflow(
         {
             "query": str,
             "subtasks": list[str],
-            "research_results": list[dict]
+            "research_results": list[dict],
+            "synthesis": dict
         }
     """
     # Create tool executor function
@@ -70,8 +74,14 @@ def run_research_workflow(
         research_results.append(findings)
         logger.info(f"Completed subtask {i}/{len(subtasks)}")
 
+    # Step 3: Synthesizer combines findings into coherent report
+    logger.info("Synthesizing research findings...")
+    synthesizer = SynthesizerAgent(client, synthesizer_prompt)
+    synthesis = synthesizer.synthesize(research_results)
+
     return {
         "query": query,
         "subtasks": subtasks,
-        "research_results": research_results
+        "research_results": research_results,
+        "synthesis": synthesis
     }

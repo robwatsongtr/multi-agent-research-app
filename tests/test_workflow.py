@@ -58,11 +58,31 @@ class TestWorkflow:
         mock_research_message_2.content = [mock_research_block_2]
         mock_research_message_2.stop_reason = "end_turn"
 
-        # Return coordinator response first, then researcher responses
+        # Mock synthesizer response
+        synthesizer_response = json.dumps({
+            "summary": "Test synthesis summary",
+            "sections": [
+                {
+                    "title": "Section 1",
+                    "content": "Content from findings",
+                    "sources": ["https://source1.com", "https://source2.com"]
+                }
+            ],
+            "key_insights": ["Insight 1", "Insight 2"]
+        })
+
+        mock_synth_block = Mock(spec=TextBlock)
+        mock_synth_block.text = synthesizer_response
+        mock_synth_message = Mock(spec=Message)
+        mock_synth_message.content = [mock_synth_block]
+        mock_synth_message.stop_reason = "end_turn"
+
+        # Return coordinator response first, then researcher responses, then synthesizer
         client.messages.create.side_effect = [
             mock_coord_message,
             mock_research_message_1,
-            mock_research_message_2
+            mock_research_message_2,
+            mock_synth_message
         ]
 
         # Run workflow
@@ -71,6 +91,7 @@ class TestWorkflow:
             client=client,
             coordinator_prompt="Coordinator prompt",
             researcher_prompt="Researcher prompt",
+            synthesizer_prompt="Synthesizer prompt",
             tavily_api_key="test_api_key"
         )
 
@@ -89,8 +110,13 @@ class TestWorkflow:
         assert len(result["research_results"][1]["findings"]) == 1
         assert result["research_results"][1]["findings"][0]["claim"] == "Finding 2"
 
-        # Verify API was called 3 times (1 coordinator + 2 researcher)
-        assert client.messages.create.call_count == 3
+        # Verify synthesis
+        assert result["synthesis"]["summary"] == "Test synthesis summary"
+        assert len(result["synthesis"]["sections"]) == 1
+        assert len(result["synthesis"]["key_insights"]) == 2
+
+        # Verify API was called 4 times (1 coordinator + 2 researcher + 1 synthesizer)
+        assert client.messages.create.call_count == 4
 
     def test_run_research_workflow_with_tools(self):
         """Test workflow passes tools to researcher."""
@@ -128,10 +154,23 @@ class TestWorkflow:
         mock_research_message_2.content = [mock_research_block_2]
         mock_research_message_2.stop_reason = "end_turn"
 
+        # Mock synthesizer response
+        synthesizer_response = json.dumps({
+            "summary": "Test",
+            "sections": [],
+            "key_insights": []
+        })
+        mock_synth_block = Mock(spec=TextBlock)
+        mock_synth_block.text = synthesizer_response
+        mock_synth_message = Mock(spec=Message)
+        mock_synth_message.content = [mock_synth_block]
+        mock_synth_message.stop_reason = "end_turn"
+
         client.messages.create.side_effect = [
             mock_coord_message,
             mock_research_message_1,
-            mock_research_message_2
+            mock_research_message_2,
+            mock_synth_message
         ]
 
         result = run_research_workflow(
@@ -139,6 +178,7 @@ class TestWorkflow:
             client=client,
             coordinator_prompt="Coordinator prompt",
             researcher_prompt="Researcher prompt",
+            synthesizer_prompt="Synthesizer prompt",
             tavily_api_key="test_api_key"
         )
 
@@ -221,13 +261,37 @@ class TestWorkflow:
         mock_research_message_2.content = [mock_research_block_2]
         mock_research_message_2.stop_reason = "end_turn"
 
+        # Mock synthesizer response
+        synthesizer_response = json.dumps({
+            "summary": "AI tools are transforming software development",
+            "sections": [
+                {
+                    "title": "AI Coding Tools",
+                    "content": "GitHub Copilot has millions of users",
+                    "sources": ["https://github.com/blog"]
+                },
+                {
+                    "title": "Developer Productivity",
+                    "content": "AI tools increase productivity by 30%",
+                    "sources": ["https://research.com/study"]
+                }
+            ],
+            "key_insights": ["AI adoption is growing", "Productivity gains are significant"]
+        })
+        mock_synth_block = Mock(spec=TextBlock)
+        mock_synth_block.text = synthesizer_response
+        mock_synth_message = Mock(spec=Message)
+        mock_synth_message.content = [mock_synth_block]
+        mock_synth_message.stop_reason = "end_turn"
+
         # Set up API call sequence
         client.messages.create.side_effect = [
             mock_coord_message,         # Coordinator call
             mock_tool_use_message_1,    # Researcher 1 requests tool
             mock_research_message_1,    # Researcher 1 final response
             mock_tool_use_message_2,    # Researcher 2 requests tool
-            mock_research_message_2     # Researcher 2 final response
+            mock_research_message_2,    # Researcher 2 final response
+            mock_synth_message          # Synthesizer
         ]
 
         # Mock execute_web_search function
@@ -259,6 +323,7 @@ class TestWorkflow:
                 client=client,
                 coordinator_prompt="Coordinator prompt",
                 researcher_prompt="Researcher prompt",
+                synthesizer_prompt="Synthesizer prompt",
                 tavily_api_key="test_api_key"
             )
 
@@ -324,11 +389,24 @@ class TestWorkflow:
         mock_research_message_2.content = [mock_research_block_2]
         mock_research_message_2.stop_reason = "end_turn"
 
+        # Mock synthesizer response
+        synthesizer_response = json.dumps({
+            "summary": "Test",
+            "sections": [],
+            "key_insights": []
+        })
+        mock_synth_block = Mock(spec=TextBlock)
+        mock_synth_block.text = synthesizer_response
+        mock_synth_message = Mock(spec=Message)
+        mock_synth_message.content = [mock_synth_block]
+        mock_synth_message.stop_reason = "end_turn"
+
         client.messages.create.side_effect = [
             mock_coord_message,
             mock_tool_use_message,
             mock_research_message,
-            mock_research_message_2
+            mock_research_message_2,
+            mock_synth_message
         ]
 
         # Mock execute_web_search to raise an error
@@ -341,6 +419,7 @@ class TestWorkflow:
                 client=client,
                 coordinator_prompt="Coordinator prompt",
                 researcher_prompt="Researcher prompt",
+                synthesizer_prompt="Synthesizer prompt",
                 tavily_api_key="test_api_key"
             )
 

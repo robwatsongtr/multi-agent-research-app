@@ -126,7 +126,12 @@ README.md
    - Preserves source citations
 2. Add Synthesizer system prompt to `prompts.yaml`
 3. Update workflow: Coordinator → Researcher → Synthesizer
-4. Test: Full pipeline produces readable research report
+4. Add logging to synthesizer
+   - INFO in `workflow.py`: "Synthesizing research findings..."
+   - INFO in `synthesizer.py`: "Synthesizer processing X findings..."
+   - INFO in `synthesizer.py`: "Generated report with X sections"
+   - DEBUG in `synthesizer.py`: Details about themes and organization
+5. Test: Full pipeline produces readable research report
 
 **Success Criteria**: Get a well-organized research report with proper citations
 
@@ -141,8 +146,14 @@ README.md
    - Suggests gaps in research
 2. Add Critic system prompt to `prompts.yaml`
 3. Update workflow to include Critic review
-4. Add optional iteration: if Critic finds gaps, trigger more research
-5. Test: Deliberately use vague query to see Critic catch issues
+4. Add logging to critic
+   - INFO in `workflow.py`: "Running critic review..."
+   - INFO in `critic.py`: "Critic analyzing report..."
+   - INFO in `critic.py`: "Critic found X issues, Y suggestions"
+   - DEBUG in `critic.py`: Details about specific issues and gaps identified
+5. Add optional iteration: if Critic finds gaps, trigger more research
+   - INFO: "Critic identified gaps, triggering additional research..."
+6. Test: Deliberately use vague query to see Critic catch issues
 
 **Success Criteria**: Critic can identify problems and suggest improvements
 

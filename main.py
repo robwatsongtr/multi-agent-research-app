@@ -57,6 +57,7 @@ def main() -> None:
             client=client,
             coordinator_prompt=prompts['coordinator'],
             researcher_prompt=prompts['researcher'],
+            synthesizer_prompt=prompts['synthesizer'],
             tavily_api_key=tavily_api_key
         )
 
@@ -83,8 +84,35 @@ def main() -> None:
                 if finding.get('details'):
                     print(f"     Details: {finding['details']}")
 
+        # Display synthesized report
         print("\n" + "="*60)
-        print(f"Completed research on {len(result['subtasks'])} subtasks")
+        print("SYNTHESIZED RESEARCH REPORT")
+        print("="*60)
+
+        synthesis = result['synthesis']
+        print(f"\n{synthesis['summary']}\n")
+
+        for i, section in enumerate(synthesis['sections'], 1):
+            print(f"\n{'─'*60}")
+            print(f"{section['title']}")
+            print(f"{'─'*60}")
+            print(f"\n{section['content']}\n")
+
+            if section.get('sources'):
+                print("Sources:")
+                for source in section['sources']:
+                    print(f"  • {source}")
+
+        print(f"\n{'─'*60}")
+        print("KEY INSIGHTS")
+        print(f"{'─'*60}\n")
+
+        for i, insight in enumerate(synthesis['key_insights'], 1):
+            print(f"{i}. {insight}")
+
+        print("\n" + "="*60)
+        print(f"Research complete: {len(result['subtasks'])} subtasks, {len(synthesis['sections'])} sections")
+        print("="*60)
 
     except ValueError as e:
         print(f"\n❌ Configuration Error: {e}", file=sys.stderr)

@@ -102,7 +102,7 @@ class TestResearcherAgent:
         mock_message.stop_reason = "end_turn"
         client.messages.create.return_value = mock_message
 
-        with pytest.raises(ValueError, match="missing required field"):
+        with pytest.raises(RuntimeError, match="Research failed"):
             agent.research("Test subtask")
 
     def test_research_validates_findings_is_list(self):
@@ -137,7 +137,7 @@ class TestResearcherAgent:
         mock_message.stop_reason = "end_turn"
         client.messages.create.return_value = mock_message
 
-        with pytest.raises(ValueError, match="Failed to parse response as JSON"):
+        with pytest.raises(RuntimeError, match="Research failed"):
             agent.research("Test subtask")
 
     def test_research_handles_api_error(self):

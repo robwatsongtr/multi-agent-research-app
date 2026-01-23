@@ -3,10 +3,11 @@
 import logging
 import json
 import re
-from typing import Any
+from typing import Any, List
 from anthropic import Anthropic
 
 from agents.base import BaseAgent
+from agents.json_utils import extract_json_from_response
 
 logger = logging.getLogger(__name__)
 
@@ -56,20 +57,9 @@ class CoordinatorAgent(BaseAgent):
             response_text = self.parse_response(response)
             logger.debug(f"Coordinator response: {response_text[:100]}...")
 
-            if '```' in response_text:
-                # Extract everything between first ``` and last ```
-                parts = response_text.split('```')
-                if len(parts) >= 3:
-                    # parts[1] is the content between first and second ```
-                    response_text = parts[1]
-                    # Remove 'json' if it's at the start
-                    if response_text.strip().startswith('json'):
-                        response_text = response_text.strip()[4:]
-                    response_text = response_text.strip()
-            else:
-                response_text = response_text.strip()
-
-            subtasks = json.loads(response_text)
+            # Use the shared JSON extraction utility
+            json_text = extract_json_from_response(response_text)
+            subtasks = json.loads(json_text)
 
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse response as JSON: {e}") from e

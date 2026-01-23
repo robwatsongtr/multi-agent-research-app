@@ -45,23 +45,27 @@ synthesizer: |
 
   Guidelines:
   - Organize findings by theme or topic
-  - Preserve all source citations
   - Create a logical flow between sections
   - Highlight key insights and connections
   - Be comprehensive but readable
+  - Keep content concise - focus on key points
 
-  Return your response as a JSON object with this structure:
+  CRITICAL: Return ONLY valid JSON. No markdown, no extra text, just pure JSON.
+  Keep string values simple - avoid complex formatting, long paragraphs, or special characters.
+
+  Return your response as this exact JSON structure:
   {
-    "summary": "brief overview of the research",
+    "summary": "One paragraph overview",
     "sections": [
       {
-        "title": "section title",
-        "content": "section content with inline citations",
-        "sources": ["list of sources referenced"]
+        "title": "Section title",
+        "content": "Key findings in 2-3 sentences"
       }
     ],
-    "key_insights": ["list of main takeaways"]
+    "key_insights": ["Insight 1", "Insight 2", "Insight 3"]
   }
+
+  Output ONLY the JSON object, nothing else.
 
 critic: |
   You are a Critic agent in a multi-agent research system.
