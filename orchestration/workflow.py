@@ -1,6 +1,7 @@
 """Orchestration workflow for multi-agent research system."""
 
 import logging
+from datetime import datetime
 from typing import Any
 from anthropic import Anthropic
 
@@ -53,6 +54,18 @@ def run_research_workflow(
         else:
             raise ValueError(f"Unknown tool: {tool_name}")
 
+    # Get current date for context
+    current_date = datetime.now().strftime("%B %d, %Y")
+    current_year = datetime.now().year
+    previous_year = current_year - 1
+
+    # Inject current date into researcher prompt using template placeholders
+    researcher_prompt_with_date = researcher_prompt.format(
+        current_date=current_date,
+        current_year=current_year,
+        previous_year=previous_year
+    )
+
     # Step 1: Coordinator breaks down query into subtasks
     logger.info("Breaking query into subtasks...")
     coordinator = CoordinatorAgent(client, coordinator_prompt)
@@ -61,7 +74,7 @@ def run_research_workflow(
 
     # Step 2: Researcher investigates each subtask
     logger.info(f"Starting research on {len(subtasks)} subtasks...")
-    researcher = ResearcherAgent(client, researcher_prompt)
+    researcher = ResearcherAgent(client, researcher_prompt_with_date)
     research_results = []
 
     for i, subtask in enumerate(subtasks, 1):
