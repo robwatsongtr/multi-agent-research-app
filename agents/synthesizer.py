@@ -44,7 +44,8 @@ class SynthesizerAgent(BaseAgent):
                 "sections": [
                     {
                         "title": str,
-                        "content": str
+                        "content": str,
+                        "sources": [str]
                     }
                 ],
                 "key_insights": [str]

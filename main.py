@@ -10,10 +10,36 @@ Usage:
 import sys
 import json
 import logging
+import textwrap
 from anthropic import Anthropic
 
 from config.settings import load_prompts, get_api_key, get_model, get_tavily_api_key
 from orchestration.workflow import run_research_workflow
+
+
+def wrap_text(text: str, width: int = 100) -> str:
+    """
+    Wrap text to a specified width, breaking at word boundaries.
+
+    Args:
+        text: Text to wrap
+        width: Maximum line width (default: 80)
+
+    Returns:
+        Wrapped text with line breaks
+    """
+    # Preserve paragraphs by splitting on double newlines
+    paragraphs = text.split('\n\n')
+    wrapped_paragraphs = []
+
+    for para in paragraphs:
+        # Remove single newlines within paragraphs
+        para = para.replace('\n', ' ')
+        # Wrap the paragraph
+        wrapped = textwrap.fill(para, width=width, break_long_words=False, break_on_hyphens=False)
+        wrapped_paragraphs.append(wrapped)
+
+    return '\n\n'.join(wrapped_paragraphs)
 
 
 def main() -> None:
@@ -62,57 +88,84 @@ def main() -> None:
         )
 
         # Display subtasks
-        print("\n" + "="*60)
+        print("\n" + "="*80)
         print("RESEARCH SUBTASKS")
-        print("="*60)
+        print("="*80)
 
         for i, subtask in enumerate(result['subtasks'], 1):
-            print(f"\n{i}. {subtask}")
+            wrapped_subtask = wrap_text(subtask, width=77)
+            lines = wrapped_subtask.split('\n')
+            print(f"\n{i}. {lines[0]}")
+            for line in lines[1:]:
+                print(f"   {line}")
 
         # Display research results
-        print("\n" + "="*60)
+        print("\n" + "="*80)
         print("RESEARCH FINDINGS")
-        print("="*60)
+        print("="*80)
 
         for i, research in enumerate(result['research_results'], 1):
-            print(f"\n[Subtask {i}]: {research['subtask']}")
+            wrapped_task = wrap_text(research['subtask'], width=68)
+            lines = wrapped_task.split('\n')
+            print(f"\n[Subtask {i}]: {lines[0]}")
+            for line in lines[1:]:
+                print(f"            {line}")
             print(f"Findings: {len(research['findings'])}")
 
             for j, finding in enumerate(research['findings'], 1):
-                print(f"\n  {j}. {finding['claim']}")
-                print(f"     Source: {finding['source']}")
+                wrapped_claim = wrap_text(finding['claim'], width=75)
+                claim_lines = wrapped_claim.split('\n')
+                print(f"\n  {j}. {claim_lines[0]}")
+                for line in claim_lines[1:]:
+                    print(f"     {line}")
+
+                wrapped_source = wrap_text(finding['source'], width=73)
+                source_lines = wrapped_source.split('\n')
+                print(f"     Source: {source_lines[0]}")
+                for line in source_lines[1:]:
+                    print(f"             {line}")
+
                 if finding.get('details'):
-                    print(f"     Details: {finding['details']}")
+                    wrapped_details = wrap_text(finding['details'], width=72)
+                    details_lines = wrapped_details.split('\n')
+                    print(f"     Details: {details_lines[0]}")
+                    for line in details_lines[1:]:
+                        print(f"              {line}")
 
         # Display synthesized report
-        print("\n" + "="*60)
+        print("\n" + "="*80)
         print("SYNTHESIZED RESEARCH REPORT")
-        print("="*60)
+        print("="*80)
 
         synthesis = result['synthesis']
-        print(f"\n{synthesis['summary']}\n")
+        print(f"\n{wrap_text(synthesis['summary'], width=80)}\n")
 
         for i, section in enumerate(synthesis['sections'], 1):
-            print(f"\n{'─'*60}")
+            print(f"\n{'─'*80}")
             print(f"{section['title']}")
-            print(f"{'─'*60}")
-            print(f"\n{section['content']}\n")
+            print(f"{'─'*80}")
+            print(f"\n{wrap_text(section['content'], width=80)}\n")
 
             if section.get('sources'):
                 print("Sources:")
                 for source in section['sources']:
-                    print(f"  • {source}")
+                    print(f"  • {wrap_text(source, width=76)}")
 
-        print(f"\n{'─'*60}")
+        print(f"\n{'─'*80}")
         print("KEY INSIGHTS")
-        print(f"{'─'*60}\n")
+        print(f"{'─'*80}\n")
 
         for i, insight in enumerate(synthesis['key_insights'], 1):
-            print(f"{i}. {insight}")
+            wrapped_insight = wrap_text(insight, width=77)
+            # Indent wrapped lines after the first
+            lines = wrapped_insight.split('\n')
+            print(f"{i}. {lines[0]}")
+            for line in lines[1:]:
+                print(f"   {line}")
 
-        print("\n" + "="*60)
+        print("\n" + "="*80)
         print(f"Research complete: {len(result['subtasks'])} subtasks, {len(synthesis['sections'])} sections")
-        print("="*60)
+        print("="*80)
 
     except ValueError as e:
         print(f"\n❌ Configuration Error: {e}", file=sys.stderr)

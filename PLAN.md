@@ -165,13 +165,22 @@ README.md
 2. Implement retry logic for API calls
 3. Add logging throughout
 4. Write tests for each agent
-5. Create example scripts
-6. Write detailed README with:
+5. **Add basic LLM evals** (learning exercise)
+   - Create `tests/evals/` directory
+   - Implement 3 critical evals:
+     - End-to-end workflow completion
+     - Citation preservation check
+     - Reasonable subtask count validation
+   - Mark as slow tests (require real API calls)
+   - Document eval pattern for future extension
+6. Create example scripts
+7. Write detailed README with:
    - Architecture explanation
    - How agents work
    - How to extend with new agents
    - Example outputs
-7. Add CLI improvements (progress indicators, better output formatting)
+   - Eval testing approach
+8. Add CLI improvements (progress indicators, better output formatting)
 
 ## Key Technical Decisions
 
@@ -198,9 +207,17 @@ README.md
 - If agent fails, log and either retry or skip gracefully
 
 ### Testing Strategy
-- Unit tests: Mock Anthropic API, test each agent's logic
-- Integration tests: Test workflow with real API (mark as slow)
-- Fixtures: Save example API responses for consistent testing
+- **Unit tests**: Mock Anthropic API, test each agent's logic
+  - Fast, free, tests code paths
+  - Example: Does coordinator parse JSON correctly?
+- **Integration tests**: Test workflow with real API (mark as slow)
+  - Slower, costs tokens, tests real behavior
+  - Example: Does full workflow complete without errors?
+- **Evals**: Test LLM output quality with real API (mark as slow)
+  - Check quality metrics, not exact matches
+  - Example: Do research findings include valid citations?
+  - Pattern: Assert properties (contains X, length between Y-Z, passes quality check)
+- **Fixtures**: Save example API responses for consistent testing
 
 ## Extension Ideas (Post-MVP)
 - Add memory: Store past research in Notes app via MCP

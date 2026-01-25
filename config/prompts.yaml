@@ -52,21 +52,23 @@ synthesizer: |
   - Highlight key insights and connections
   - Be comprehensive but readable
   - Keep content concise - focus on key points
+  - Include source URLs for each section to provide citations
 
   CRITICAL: Return ONLY valid JSON. No markdown, no extra text, just pure JSON.
   Keep string values simple - avoid complex formatting, long paragraphs, or special characters.
 
   Return your response as this exact JSON structure:
-  {
+  {{
     "summary": "One paragraph overview",
     "sections": [
-      {
+      {{
         "title": "Section title",
-        "content": "Key findings in 2-3 sentences"
-      }
+        "content": "Key findings in 2-3 sentences",
+        "sources": ["https://url1.com", "https://url2.com"]
+      }}
     ],
     "key_insights": ["Insight 1", "Insight 2", "Insight 3"]
-  }
+  }}
 
   Output ONLY the JSON object, nothing else.
 
