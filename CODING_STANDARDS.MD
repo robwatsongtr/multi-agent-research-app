@@ -13,6 +13,12 @@ All Python projects must include:
   - Configure in `mypy.ini` with strict settings
   - Use `arch -arm64` prefix on Apple Silicon Macs
 
+- **pydantic**: Data validation and structured data modeling
+  - Required for all structured data (API responses, configuration, data transfer objects)
+  - Use `BaseModel` for all data structures instead of `dict[str, Any]`
+  - Provides automatic validation, type safety, and IDE autocomplete
+  - Version: `pydantic>=2.0.0`
+
 - **pre-commit**: Git hooks for automated quality checks
   - Install hooks with: `pre-commit install`
   - Configure in `.pre-commit-config.yaml`
@@ -29,6 +35,12 @@ All Python projects must include:
   - ❌ Bad: `return api.call()`
 
 - **Use classes**: Organize functionality with classes to reduce code duplication if possible.
+
+- **Structured data**: Use Pydantic models for all structured data instead of nested dictionaries.
+  - ✅ Good: `class User(BaseModel): name: str; email: str`
+  - ❌ Bad: `user: dict[str, Any] = {"name": "...", "email": "..."}`
+  - Benefits: Type safety, validation, IDE autocomplete, easier refactoring
+  - Access: `user.name` instead of `user['name']`
 
 - **Implementation of Features**: Stub out the code and do the boilerplate, but ask if I want to do the logic. If so, let me write the logic, or if not go ahead and implement the feature.
 
