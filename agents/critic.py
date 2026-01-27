@@ -6,7 +6,7 @@ from anthropic import Anthropic
 
 from agents.base import BaseAgent
 from agents.models import SynthesizedReport, CriticReview
-from agents.parsing import parse_llm_response
+from agents.parsing import extract_json_from_text
 
 logger = logging.getLogger(__name__)
 
@@ -63,11 +63,12 @@ class CriticAgent(BaseAgent):
             # Parse the response to get text content
             response_text = self.parse_response(response)
 
-            # Parse using Pydantic model
-            result = parse_llm_response(
-                response_text,
-                CriticReview
-            )
+            # Extract and parse JSON (handles markdown code blocks)
+            json_text = extract_json_from_text(response_text)
+            result_dict = json.loads(json_text)
+
+            # Validate using Pydantic model
+            result = CriticReview(**result_dict)
 
             issue_count = len(result.issues)
             suggestion_count = len(result.suggestions)
@@ -76,5 +77,7 @@ class CriticAgent(BaseAgent):
 
             return result
 
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse response as JSON: {e}") from e
         except Exception as e:
             raise RuntimeError(f"Critic review failed: {e}") from e

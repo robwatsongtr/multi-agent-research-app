@@ -1,11 +1,12 @@
 """Coordinator agent that breaks queries into research subtasks."""
 
 import logging
+import json
 from anthropic import Anthropic
 
 from agents.base import BaseAgent
 from agents.models import CoordinatorResponse
-from agents.parsing import parse_llm_response
+from agents.parsing import extract_json_from_text
 
 logger = logging.getLogger(__name__)
 
@@ -55,23 +56,25 @@ class CoordinatorAgent(BaseAgent):
             response_text = self.parse_response(response)
             logger.debug(f"Coordinator response: {response_text[:100]}...")
 
-            # Define fallback parser for plain text lists
-            def fallback_parser(text: str) -> dict:
-                """Extract subtasks from plain text if JSON fails."""
-                lines = [line.strip() for line in text.split('\n') if line.strip()]
-                subtasks = [line.lstrip('1234567890.-) ') for line in lines if line]
-                return {"subtasks": subtasks[:4]}  # Limit to 4
+            # Extract and parse JSON (handles markdown code blocks)
+            json_text = extract_json_from_text(response_text)
+            subtasks_raw = json.loads(json_text)
 
-            # Parse using Pydantic model
-            result = parse_llm_response(
-                response_text,
-                CoordinatorResponse,
-                fallback_parser=fallback_parser
-            )
+            # Handle both formats: plain array or object with "subtasks" field
+            if isinstance(subtasks_raw, list):
+                # Plain array format: ["task1", "task2"]
+                result = CoordinatorResponse(subtasks=subtasks_raw)
+            elif isinstance(subtasks_raw, dict) and "subtasks" in subtasks_raw:
+                # Object format: {"subtasks": ["task1", "task2"]}
+                result = CoordinatorResponse(**subtasks_raw)
+            else:
+                raise ValueError(f"Unexpected JSON format: {type(subtasks_raw)}")
 
             logger.info(f"Generated {len(result.subtasks)} subtasks")
 
             return result.subtasks
 
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse response as JSON: {e}") from e
         except Exception as e:
             raise RuntimeError(f"Coordination failed: {e}") from e

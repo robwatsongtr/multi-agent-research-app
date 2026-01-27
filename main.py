@@ -170,7 +170,12 @@ def main() -> None:
         print("="*80)
 
         critique = result.critique
-        print(f"\nOverall Quality: {critique.overall_quality}\n")
+        wrapped_quality = wrap_text(critique.overall_quality, width=63)
+        quality_lines = wrapped_quality.split('\n')
+        print(f"\nOverall Quality: {quality_lines[0]}")
+        for line in quality_lines[1:]:
+            print(f"                 {line}")
+        print()
 
         if critique.issues:
             print(f"{'─'*80}")

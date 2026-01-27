@@ -1,12 +1,13 @@
 """Researcher agent that executes research subtasks."""
 
 import logging
+import json
 from typing import Any, Optional, Callable
 from anthropic import Anthropic
 
 from agents.base import BaseAgent
 from agents.models import ResearchResult
-from agents.parsing import parse_llm_response
+from agents.parsing import extract_json_from_text
 
 logger = logging.getLogger(__name__)
 
@@ -65,13 +66,16 @@ class ResearcherAgent(BaseAgent):
             response_text = self.parse_response(response)
             logger.debug(f"Researcher response: {response_text[:100]}...")
 
-            # Parse using Pydantic model
-            result = parse_llm_response(
-                response_text,
-                ResearchResult
-            )
+            # Extract and parse JSON (handles markdown code blocks)
+            json_text = extract_json_from_text(response_text)
+            result_dict = json.loads(json_text)
+
+            # Validate using Pydantic model
+            result = ResearchResult(**result_dict)
 
             return result
 
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse response as JSON: {e}") from e
         except Exception as e:
             raise RuntimeError(f"Research failed: {e}") from e
