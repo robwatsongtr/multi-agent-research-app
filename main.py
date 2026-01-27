@@ -84,6 +84,7 @@ def main() -> None:
             coordinator_prompt=prompts['coordinator'],
             researcher_prompt=prompts['researcher'],
             synthesizer_prompt=prompts['synthesizer'],
+            critic_prompt=prompts['critic'],
             tavily_api_key=tavily_api_key
         )
 
@@ -162,6 +163,51 @@ def main() -> None:
             print(f"{i}. {lines[0]}")
             for line in lines[1:]:
                 print(f"   {line}")
+
+        # Display critique
+        print("\n" + "="*80)
+        print("CRITIC REVIEW")
+        print("="*80)
+
+        critique = result['critique']
+        print(f"\nOverall Quality: {critique['overall_quality']}\n")
+
+        if critique['issues']:
+            print(f"{'─'*80}")
+            print(f"ISSUES IDENTIFIED ({len(critique['issues'])})")
+            print(f"{'─'*80}\n")
+
+            for i, issue in enumerate(critique['issues'], 1):
+                print(f"{i}. [{issue['severity'].upper()}] {issue['type'].replace('_', ' ').title()}")
+                wrapped_desc = wrap_text(issue['description'], width=75)
+                desc_lines = wrapped_desc.split('\n')
+                print(f"   {desc_lines[0]}")
+                for line in desc_lines[1:]:
+                    print(f"   {line}")
+                print(f"   Location: {issue['location']}\n")
+        else:
+            print("No issues identified.\n")
+
+        if critique['suggestions']:
+            print(f"{'─'*80}")
+            print("SUGGESTIONS FOR IMPROVEMENT")
+            print(f"{'─'*80}\n")
+
+            for i, suggestion in enumerate(critique['suggestions'], 1):
+                wrapped_suggestion = wrap_text(suggestion, width=77)
+                lines = wrapped_suggestion.split('\n')
+                print(f"{i}. {lines[0]}")
+                for line in lines[1:]:
+                    print(f"   {line}")
+        else:
+            print("No suggestions for improvement.\n")
+
+        print(f"\n{'─'*80}")
+        if critique['needs_more_research']:
+            print("⚠️  Critic recommends additional research to address identified gaps.")
+        else:
+            print("✓ Critic assessment: Research is comprehensive.")
+        print(f"{'─'*80}")
 
         print("\n" + "="*80)
         print(f"Research complete: {len(result['subtasks'])} subtasks, {len(synthesis['sections'])} sections")

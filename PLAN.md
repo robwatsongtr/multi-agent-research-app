@@ -165,7 +165,7 @@ README.md
 2. Implement retry logic for API calls
 3. Add logging throughout
 4. Write tests for each agent
-5. **Add basic LLM evals** (learning exercise)
+5. **Add basic LLM evals**
    - Create `tests/evals/` directory
    - Implement 3 critical evals:
      - End-to-end workflow completion
@@ -241,11 +241,3 @@ python main.py "What are the latest developments in quantum computing?"
 ```
 
 This should trigger the full pipeline and produce a research report.
-
-## Notes for Claude Code
-- Start with Phase 1 only - don't build everything at once
-- Focus on getting one agent working end-to-end before adding complexity
-- Use your existing web_search MCP tool - agents should leverage it
-- Keep prompts in YAML so we can iterate without code changes
-- Add type hints throughout for clarity
-- Follow CODING_STANDARDS.md for all implementation

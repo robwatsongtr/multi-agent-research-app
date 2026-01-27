@@ -8,6 +8,7 @@ from anthropic import Anthropic
 from agents.coordinator import CoordinatorAgent
 from agents.researcher import ResearcherAgent
 from agents.synthesizer import SynthesizerAgent
+from agents.critic import CriticAgent
 from tools import WEB_SEARCH_TOOL, execute_web_search
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ def run_research_workflow(
     coordinator_prompt: str,
     researcher_prompt: str,
     synthesizer_prompt: str,
+    critic_prompt: str,
     tavily_api_key: str
 ) -> dict[str, Any]:
     """
@@ -30,6 +32,7 @@ def run_research_workflow(
         coordinator_prompt: System prompt for coordinator
         researcher_prompt: System prompt for researcher
         synthesizer_prompt: System prompt for synthesizer
+        critic_prompt: System prompt for critic
         tavily_api_key: Tavily API key for web search
 
     Returns:
@@ -38,7 +41,8 @@ def run_research_workflow(
             "query": str,
             "subtasks": list[str],
             "research_results": list[dict],
-            "synthesis": dict
+            "synthesis": dict,
+            "critique": dict
         }
     """
     # Create tool executor function
@@ -92,9 +96,15 @@ def run_research_workflow(
     synthesizer = SynthesizerAgent(client, synthesizer_prompt)
     synthesis = synthesizer.synthesize(research_results)
 
+    # Step 4: Critic reviews the synthesized report
+    logger.info("Running critic review...")
+    critic = CriticAgent(client, critic_prompt)
+    critique = critic.review(synthesis)
+
     return {
         "query": query,
         "subtasks": subtasks,
         "research_results": research_results,
-        "synthesis": synthesis
+        "synthesis": synthesis,
+        "critique": critique
     }

@@ -77,12 +77,27 @@ class TestWorkflow:
         mock_synth_message.content = [mock_synth_block]
         mock_synth_message.stop_reason = "end_turn"
 
-        # Return coordinator response first, then researcher responses, then synthesizer
+        # Mock critic response
+        critic_response = json.dumps({
+            "overall_quality": "Good comprehensive research",
+            "issues": [],
+            "suggestions": ["Consider adding more recent data"],
+            "needs_more_research": False
+        })
+
+        mock_critic_block = Mock(spec=TextBlock)
+        mock_critic_block.text = critic_response
+        mock_critic_message = Mock(spec=Message)
+        mock_critic_message.content = [mock_critic_block]
+        mock_critic_message.stop_reason = "end_turn"
+
+        # Return coordinator response first, then researcher responses, then synthesizer, then critic
         client.messages.create.side_effect = [
             mock_coord_message,
             mock_research_message_1,
             mock_research_message_2,
-            mock_synth_message
+            mock_synth_message,
+            mock_critic_message
         ]
 
         # Run workflow
@@ -92,6 +107,7 @@ class TestWorkflow:
             coordinator_prompt="Coordinator prompt",
             researcher_prompt="Researcher prompt",
             synthesizer_prompt="Synthesizer prompt",
+            critic_prompt="Critic prompt",
             tavily_api_key="test_api_key"
         )
 
@@ -115,8 +131,14 @@ class TestWorkflow:
         assert len(result["synthesis"]["sections"]) == 1
         assert len(result["synthesis"]["key_insights"]) == 2
 
-        # Verify API was called 4 times (1 coordinator + 2 researcher + 1 synthesizer)
-        assert client.messages.create.call_count == 4
+        # Verify critique
+        assert result["critique"]["overall_quality"] == "Good comprehensive research"
+        assert len(result["critique"]["issues"]) == 0
+        assert len(result["critique"]["suggestions"]) == 1
+        assert result["critique"]["needs_more_research"] is False
+
+        # Verify API was called 5 times (1 coordinator + 2 researcher + 1 synthesizer + 1 critic)
+        assert client.messages.create.call_count == 5
 
     def test_run_research_workflow_with_tools(self):
         """Test workflow passes tools to researcher."""
@@ -166,11 +188,25 @@ class TestWorkflow:
         mock_synth_message.content = [mock_synth_block]
         mock_synth_message.stop_reason = "end_turn"
 
+        # Mock critic response
+        critic_response = json.dumps({
+            "overall_quality": "Test",
+            "issues": [],
+            "suggestions": [],
+            "needs_more_research": False
+        })
+        mock_critic_block = Mock(spec=TextBlock)
+        mock_critic_block.text = critic_response
+        mock_critic_message = Mock(spec=Message)
+        mock_critic_message.content = [mock_critic_block]
+        mock_critic_message.stop_reason = "end_turn"
+
         client.messages.create.side_effect = [
             mock_coord_message,
             mock_research_message_1,
             mock_research_message_2,
-            mock_synth_message
+            mock_synth_message,
+            mock_critic_message
         ]
 
         result = run_research_workflow(
@@ -179,6 +215,7 @@ class TestWorkflow:
             coordinator_prompt="Coordinator prompt",
             researcher_prompt="Researcher prompt",
             synthesizer_prompt="Synthesizer prompt",
+            critic_prompt="Critic prompt",
             tavily_api_key="test_api_key"
         )
 
@@ -284,6 +321,19 @@ class TestWorkflow:
         mock_synth_message.content = [mock_synth_block]
         mock_synth_message.stop_reason = "end_turn"
 
+        # Mock critic response
+        critic_response = json.dumps({
+            "overall_quality": "Excellent research",
+            "issues": [],
+            "suggestions": [],
+            "needs_more_research": False
+        })
+        mock_critic_block = Mock(spec=TextBlock)
+        mock_critic_block.text = critic_response
+        mock_critic_message = Mock(spec=Message)
+        mock_critic_message.content = [mock_critic_block]
+        mock_critic_message.stop_reason = "end_turn"
+
         # Set up API call sequence
         client.messages.create.side_effect = [
             mock_coord_message,         # Coordinator call
@@ -291,7 +341,8 @@ class TestWorkflow:
             mock_research_message_1,    # Researcher 1 final response
             mock_tool_use_message_2,    # Researcher 2 requests tool
             mock_research_message_2,    # Researcher 2 final response
-            mock_synth_message          # Synthesizer
+            mock_synth_message,         # Synthesizer
+            mock_critic_message         # Critic
         ]
 
         # Mock execute_web_search function
@@ -324,6 +375,7 @@ class TestWorkflow:
                 coordinator_prompt="Coordinator prompt",
                 researcher_prompt="Researcher prompt",
                 synthesizer_prompt="Synthesizer prompt",
+                critic_prompt="Critic prompt",
                 tavily_api_key="test_api_key"
             )
 
@@ -401,12 +453,26 @@ class TestWorkflow:
         mock_synth_message.content = [mock_synth_block]
         mock_synth_message.stop_reason = "end_turn"
 
+        # Mock critic response
+        critic_response = json.dumps({
+            "overall_quality": "Test",
+            "issues": [],
+            "suggestions": [],
+            "needs_more_research": False
+        })
+        mock_critic_block = Mock(spec=TextBlock)
+        mock_critic_block.text = critic_response
+        mock_critic_message = Mock(spec=Message)
+        mock_critic_message.content = [mock_critic_block]
+        mock_critic_message.stop_reason = "end_turn"
+
         client.messages.create.side_effect = [
             mock_coord_message,
             mock_tool_use_message,
             mock_research_message,
             mock_research_message_2,
-            mock_synth_message
+            mock_synth_message,
+            mock_critic_message
         ]
 
         # Mock execute_web_search to raise an error
@@ -420,6 +486,7 @@ class TestWorkflow:
                 coordinator_prompt="Coordinator prompt",
                 researcher_prompt="Researcher prompt",
                 synthesizer_prompt="Synthesizer prompt",
+                critic_prompt="Critic prompt",
                 tavily_api_key="test_api_key"
             )
 

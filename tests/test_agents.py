@@ -8,6 +8,7 @@ from anthropic.types import Message, TextBlock
 from agents.base import BaseAgent
 from agents.coordinator import CoordinatorAgent
 from agents.synthesizer import SynthesizerAgent
+from agents.critic import CriticAgent
 
 
 class TestBaseAgent:
@@ -493,3 +494,284 @@ class TestSynthesizerAgent:
         result = agent.synthesize(findings)
 
         assert len(result["sections"]) == 3
+
+
+class TestCriticAgent:
+    """Tests for CriticAgent class."""
+
+    def test_init(self):
+        """Test CriticAgent initialization."""
+        client = Mock()
+        system_prompt = "You are a critic"
+
+        agent = CriticAgent(client, system_prompt)
+
+        assert agent.client == client
+        assert agent.system_prompt == system_prompt
+
+    def test_review_success_with_valid_json(self):
+        """Test review successfully parses valid JSON response."""
+        client = Mock()
+        agent = CriticAgent(client, "Test prompt")
+
+        # Sample research report
+        report = {
+            "summary": "Research on AI advancements",
+            "sections": [
+                {
+                    "title": "AI Developments",
+                    "content": "GPT-4 was released in 2023.",
+                    "sources": ["https://example.com/gpt4"]
+                }
+            ],
+            "key_insights": ["AI models are advancing rapidly"]
+        }
+
+        # Mock the response
+        mock_text_block = Mock(spec=TextBlock)
+        mock_text_block.text = json.dumps({
+            "overall_quality": "Good research with comprehensive coverage",
+            "issues": [
+                {
+                    "type": "gap",
+                    "description": "Missing discussion of ethical implications",
+                    "location": "AI Developments section",
+                    "severity": "medium"
+                }
+            ],
+            "suggestions": [
+                "Add section on AI ethics and safety",
+                "Include more recent 2024 developments"
+            ],
+            "needs_more_research": True
+        })
+        mock_message = Mock(spec=Message)
+        mock_message.content = [mock_text_block]
+        mock_message.stop_reason = "end_turn"
+        client.messages.create.return_value = mock_message
+
+        result = agent.review(report)
+
+        assert result["overall_quality"] == "Good research with comprehensive coverage"
+        assert len(result["issues"]) == 1
+        assert result["issues"][0]["type"] == "gap"
+        assert result["issues"][0]["severity"] == "medium"
+        assert len(result["suggestions"]) == 2
+        assert result["needs_more_research"] is True
+
+    def test_review_success_strips_markdown(self):
+        """Test review strips markdown code blocks."""
+        client = Mock()
+        agent = CriticAgent(client, "Test prompt")
+
+        report = {
+            "summary": "Test summary",
+            "sections": [{"title": "Test", "content": "Content", "sources": []}],
+            "key_insights": ["Insight 1"]
+        }
+
+        # Mock response with markdown
+        mock_text_block = Mock(spec=TextBlock)
+        response_json = {
+            "overall_quality": "Good",
+            "issues": [],
+            "suggestions": ["Add more sources"],
+            "needs_more_research": False
+        }
+        mock_text_block.text = f'```json\n{json.dumps(response_json)}\n```'
+        mock_message = Mock(spec=Message)
+        mock_message.content = [mock_text_block]
+        mock_message.stop_reason = "end_turn"
+        client.messages.create.return_value = mock_message
+
+        result = agent.review(report)
+
+        assert result["overall_quality"] == "Good"
+        assert len(result["issues"]) == 0
+        assert result["needs_more_research"] is False
+
+    def test_review_validates_required_fields(self):
+        """Test review validates all required fields are present."""
+        client = Mock()
+        agent = CriticAgent(client, "Test prompt")
+
+        report = {
+            "summary": "Test",
+            "sections": [],
+            "key_insights": []
+        }
+
+        # Test missing needs_more_research
+        mock_text_block = Mock(spec=TextBlock)
+        mock_text_block.text = json.dumps({
+            "overall_quality": "Good",
+            "issues": [],
+            "suggestions": []
+        })
+        mock_message = Mock(spec=Message)
+        mock_message.content = [mock_text_block]
+        mock_message.stop_reason = "end_turn"
+        client.messages.create.return_value = mock_message
+
+        with pytest.raises(RuntimeError, match="Critic review failed"):
+            agent.review(report)
+
+    def test_review_validates_issues_is_list(self):
+        """Test review validates issues is a list."""
+        client = Mock()
+        agent = CriticAgent(client, "Test prompt")
+
+        report = {
+            "summary": "Test",
+            "sections": [],
+            "key_insights": []
+        }
+
+        mock_text_block = Mock(spec=TextBlock)
+        mock_text_block.text = json.dumps({
+            "overall_quality": "Good",
+            "issues": "not a list",
+            "suggestions": [],
+            "needs_more_research": False
+        })
+        mock_message = Mock(spec=Message)
+        mock_message.content = [mock_text_block]
+        mock_message.stop_reason = "end_turn"
+        client.messages.create.return_value = mock_message
+
+        with pytest.raises(ValueError, match="issues must be a list"):
+            agent.review(report)
+
+    def test_review_validates_suggestions_is_list(self):
+        """Test review validates suggestions is a list."""
+        client = Mock()
+        agent = CriticAgent(client, "Test prompt")
+
+        report = {
+            "summary": "Test",
+            "sections": [],
+            "key_insights": []
+        }
+
+        mock_text_block = Mock(spec=TextBlock)
+        mock_text_block.text = json.dumps({
+            "overall_quality": "Good",
+            "issues": [],
+            "suggestions": "not a list",
+            "needs_more_research": False
+        })
+        mock_message = Mock(spec=Message)
+        mock_message.content = [mock_text_block]
+        mock_message.stop_reason = "end_turn"
+        client.messages.create.return_value = mock_message
+
+        with pytest.raises(ValueError, match="suggestions must be a list"):
+            agent.review(report)
+
+    def test_review_validates_needs_more_research_is_bool(self):
+        """Test review validates needs_more_research is a boolean."""
+        client = Mock()
+        agent = CriticAgent(client, "Test prompt")
+
+        report = {
+            "summary": "Test",
+            "sections": [],
+            "key_insights": []
+        }
+
+        mock_text_block = Mock(spec=TextBlock)
+        mock_text_block.text = json.dumps({
+            "overall_quality": "Good",
+            "issues": [],
+            "suggestions": [],
+            "needs_more_research": "not a boolean"
+        })
+        mock_message = Mock(spec=Message)
+        mock_message.content = [mock_text_block]
+        mock_message.stop_reason = "end_turn"
+        client.messages.create.return_value = mock_message
+
+        with pytest.raises(ValueError, match="needs_more_research must be a boolean"):
+            agent.review(report)
+
+    def test_review_handles_invalid_json(self):
+        """Test review handles invalid JSON gracefully."""
+        client = Mock()
+        agent = CriticAgent(client, "Test prompt")
+
+        report = {
+            "summary": "Test",
+            "sections": [],
+            "key_insights": []
+        }
+
+        mock_text_block = Mock(spec=TextBlock)
+        mock_text_block.text = 'Not valid JSON'
+        mock_message = Mock(spec=Message)
+        mock_message.content = [mock_text_block]
+        mock_message.stop_reason = "end_turn"
+        client.messages.create.return_value = mock_message
+
+        with pytest.raises(RuntimeError, match="Critic review failed"):
+            agent.review(report)
+
+    def test_review_handles_api_error(self):
+        """Test review handles API errors."""
+        client = Mock()
+        agent = CriticAgent(client, "Test prompt")
+
+        report = {
+            "summary": "Test",
+            "sections": [],
+            "key_insights": []
+        }
+
+        client.messages.create.side_effect = Exception("API Error")
+
+        with pytest.raises(RuntimeError, match="Critic review failed"):
+            agent.review(report)
+
+    def test_review_logs_issue_and_suggestion_count(self):
+        """Test review logs the number of issues and suggestions."""
+        client = Mock()
+        agent = CriticAgent(client, "Test prompt")
+
+        report = {
+            "summary": "Test",
+            "sections": [],
+            "key_insights": []
+        }
+
+        mock_text_block = Mock(spec=TextBlock)
+        mock_text_block.text = json.dumps({
+            "overall_quality": "Good",
+            "issues": [
+                {
+                    "type": "gap",
+                    "description": "Missing info",
+                    "location": "Section 1",
+                    "severity": "low"
+                },
+                {
+                    "type": "unsupported_claim",
+                    "description": "No source",
+                    "location": "Section 2",
+                    "severity": "high"
+                }
+            ],
+            "suggestions": [
+                "Add more sources",
+                "Expand section 3",
+                "Include recent data"
+            ],
+            "needs_more_research": True
+        })
+        mock_message = Mock(spec=Message)
+        mock_message.content = [mock_text_block]
+        mock_message.stop_reason = "end_turn"
+        client.messages.create.return_value = mock_message
+
+        result = agent.review(report)
+
+        assert len(result["issues"]) == 2
+        assert len(result["suggestions"]) == 3
