@@ -1,5 +1,5 @@
 """
-LLM evaluation tests for end-to-end workflow quality.
+LLM evaluation tests for end-to-end workflow quality with Pydantic models.
 
 These tests use real API calls to validate the quality of research outputs.
 Run with: pytest tests/evals/ -v -m slow
@@ -10,13 +10,13 @@ from anthropic import Anthropic
 
 from config.settings import load_prompts, get_api_key, get_tavily_api_key
 from orchestration.workflow import run_research_workflow
+from agents.models import WorkflowResult, ResearchResult, SynthesizedReport, CriticReview
 
 
 @pytest.fixture
 def api_client():
     """Create Anthropic client for evals."""
     api_key = get_api_key()
-
     return Anthropic(api_key=api_key)
 
 
@@ -55,21 +55,18 @@ class TestWorkflowEvals:
             tavily_api_key=tavily_key
         )
 
-        # Verify workflow completed
-        assert result is not None
-        assert "query" in result
-        assert "subtasks" in result
-        assert "research_results" in result
-        assert "synthesis" in result
-        assert "critique" in result
+        # Verify workflow completed and returned Pydantic model
+        assert isinstance(result, WorkflowResult)
+        assert result.query == query
+        assert len(result.subtasks) > 0
+        assert len(result.research_results) > 0
+        assert isinstance(result.synthesis, SynthesizedReport)
+        assert isinstance(result.critique, CriticReview)
 
         # Verify basic structure
-        assert result["query"] == query
-        assert len(result["subtasks"]) > 0
-        assert len(result["research_results"]) > 0
-        assert "summary" in result["synthesis"]
-        assert "sections" in result["synthesis"]
-        assert "overall_quality" in result["critique"]
+        assert result.synthesis.summary
+        assert len(result.synthesis.sections) > 0
+        assert result.critique.overall_quality
 
     def test_citation_preservation(self, api_client, tavily_key, prompts):
         """
@@ -90,21 +87,21 @@ class TestWorkflowEvals:
             tavily_api_key=tavily_key
         )
 
-        # Collect all research sources
+        # Collect all research sources using Pydantic models
         research_sources = set()
-        for research in result["research_results"]:
-            for finding in research["findings"]:
-                if "source" in finding and finding["source"]:
-                    research_sources.add(finding["source"])
+        for research in result.research_results:
+            for finding in research.findings:
+                if finding.source:
+                    research_sources.add(finding.source)
 
         # Check synthesis includes citations
         synthesis_has_sources = False
         synthesis_sources = set()
 
-        for section in result["synthesis"]["sections"]:
-            if "sources" in section and section["sources"]:
+        for section in result.synthesis.sections:
+            if section.sources:
                 synthesis_has_sources = True
-                for source in section["sources"]:
+                for source in section.sources:
                     synthesis_sources.add(source)
 
         # Verify citations exist
@@ -112,7 +109,6 @@ class TestWorkflowEvals:
         assert len(synthesis_sources) > 0, "Synthesis should have at least one source"
 
         # Verify at least some research sources appear in synthesis
-        # (Not all research findings may make it to final report, but some should)
         overlap = research_sources.intersection(synthesis_sources)
         assert len(overlap) > 0, "At least some research sources should appear in synthesis"
 
@@ -121,10 +117,8 @@ class TestWorkflowEvals:
         Eval: Coordinator should generate a reasonable number of subtasks.
 
         Tests that the coordinator breaks queries into 2-4 subtasks as specified
-        in the prompt, avoiding both over-simplification (1 task) and
-        over-complication (many tasks).
+        in the prompt, avoiding both over-simplification and over-complication.
         """
-        # Test with a moderately complex query
         query = "How is artificial intelligence transforming healthcare?"
 
         result = run_research_workflow(
@@ -137,23 +131,21 @@ class TestWorkflowEvals:
             tavily_api_key=tavily_key
         )
 
-        subtask_count = len(result["subtasks"])
+        subtask_count = len(result.subtasks)
 
         # Verify reasonable range (2-5 tasks is acceptable, 2-4 is ideal)
         assert 2 <= subtask_count <= 5, (
             f"Expected 2-5 subtasks, got {subtask_count}. "
-            f"Subtasks: {result['subtasks']}"
+            f"Subtasks: {result.subtasks}"
         )
 
         # Verify each subtask is non-empty and substantive
-        for i, subtask in enumerate(result["subtasks"], 1):
-            assert len(subtask.strip()) > 10, (
-                f"Subtask {i} is too short: '{subtask}'"
-            )
+        for i, subtask in enumerate(result.subtasks, 1):
+            assert len(subtask.strip()) > 10, f"Subtask {i} is too short: '{subtask}'"
 
         # Verify subtasks are distinct (no duplicates)
-        unique_subtasks = set(s.lower().strip() for s in result["subtasks"])
-        assert len(unique_subtasks) == len(result["subtasks"]), (
+        unique_subtasks = set(s.lower().strip() for s in result.subtasks)
+        assert len(unique_subtasks) == len(result.subtasks), (
             "Subtasks should be distinct, found duplicates"
         )
 
@@ -181,17 +173,17 @@ class TestResearchQualityEvals:
             tavily_api_key=tavily_key
         )
 
-        # Verify at least some findings have sources
+        # Verify findings have sources using Pydantic models
         total_findings = 0
         findings_with_sources = 0
 
-        for research in result["research_results"]:
-            for finding in research["findings"]:
+        for research in result.research_results:
+            for finding in research.findings:
                 total_findings += 1
-                if "source" in finding and finding["source"]:
+                if finding.source:
                     # Verify source looks like a URL
-                    assert finding["source"].startswith("http"), (
-                        f"Source should be a URL: {finding['source']}"
+                    assert finding.source.startswith("http"), (
+                        f"Source should be a URL: {finding.source}"
                     )
                     findings_with_sources += 1
 
@@ -222,26 +214,24 @@ class TestResearchQualityEvals:
             tavily_api_key=tavily_key
         )
 
-        synthesis = result["synthesis"]
+        # Access synthesis using Pydantic model
+        synthesis = result.synthesis
 
         # Verify summary exists and is substantive
-        assert "summary" in synthesis
-        assert len(synthesis["summary"]) > 50, "Summary should be substantive"
+        assert len(synthesis.summary) > 50, "Summary should be substantive"
 
         # Verify sections exist and have required fields
-        assert "sections" in synthesis
-        assert len(synthesis["sections"]) > 0, "Should have at least one section"
+        assert len(synthesis.sections) > 0, "Should have at least one section"
 
-        for i, section in enumerate(synthesis["sections"], 1):
-            assert "title" in section, f"Section {i} missing title"
-            assert "content" in section, f"Section {i} missing content"
-            assert len(section["content"]) > 50, f"Section {i} content too short"
+        for i, section in enumerate(synthesis.sections, 1):
+            assert section.title, f"Section {i} missing title"
+            assert section.content, f"Section {i} missing content"
+            assert len(section.content) > 50, f"Section {i} content too short"
 
         # Verify key insights exist
-        assert "key_insights" in synthesis
-        assert len(synthesis["key_insights"]) > 0, "Should have at least one key insight"
+        assert len(synthesis.key_insights) > 0, "Should have at least one key insight"
 
-        for i, insight in enumerate(synthesis["key_insights"], 1):
+        for i, insight in enumerate(synthesis.key_insights, 1):
             assert len(insight) > 20, f"Key insight {i} too short: '{insight}'"
 
 
@@ -268,32 +258,63 @@ class TestCriticEvals:
             tavily_api_key=tavily_key
         )
 
-        critique = result["critique"]
-
-        # Verify required fields
-        assert "overall_quality" in critique
-        assert "issues" in critique
-        assert "suggestions" in critique
-        assert "needs_more_research" in critique
+        # Access critique using Pydantic model
+        critique = result.critique
 
         # Verify overall_quality is substantive
-        assert len(critique["overall_quality"]) > 10, (
+        assert len(critique.overall_quality) > 10, (
             "Overall quality assessment should be substantive"
         )
 
         # Verify issues are well-formed if present
-        if critique["issues"]:
-            for issue in critique["issues"]:
-                assert "severity" in issue
-                assert "type" in issue
-                assert "description" in issue
-                assert "location" in issue
-                assert len(issue["description"]) > 10
+        for issue in critique.issues:
+            assert issue.severity
+            assert issue.type
+            assert issue.description
+            assert issue.location
+            assert len(issue.description) > 10
 
         # Verify suggestions are substantive if present
-        if critique["suggestions"]:
-            for suggestion in critique["suggestions"]:
-                assert len(suggestion) > 10, "Suggestions should be substantive"
+        for suggestion in critique.suggestions:
+            assert len(suggestion) > 10, "Suggestions should be substantive"
 
         # Verify needs_more_research is boolean
-        assert isinstance(critique["needs_more_research"], bool)
+        assert isinstance(critique.needs_more_research, bool)
+
+    def test_pydantic_model_validation(self, api_client, tavily_key, prompts):
+        """
+        Eval: All workflow outputs should be valid Pydantic models.
+
+        Tests that Pydantic validation is working correctly throughout
+        the workflow, catching any malformed LLM responses.
+        """
+        query = "What are the key trends in renewable energy?"
+
+        result = run_research_workflow(
+            query=query,
+            client=api_client,
+            coordinator_prompt=prompts['coordinator'],
+            researcher_prompt=prompts['researcher'],
+            synthesizer_prompt=prompts['synthesizer'],
+            critic_prompt=prompts['critic'],
+            tavily_api_key=tavily_key
+        )
+
+        # Verify all components are proper Pydantic models
+        assert isinstance(result, WorkflowResult)
+
+        for research in result.research_results:
+            assert isinstance(research, ResearchResult)
+            # Verify Pydantic validation worked (at least 1 finding required)
+            assert len(research.findings) >= 1
+
+        assert isinstance(result.synthesis, SynthesizedReport)
+        # Verify Pydantic validation worked (at least 1 section required)
+        assert len(result.synthesis.sections) >= 1
+
+        assert isinstance(result.critique, CriticReview)
+
+        # Verify we can serialize to dict and back
+        result_dict = result.model_dump()
+        restored = WorkflowResult.model_validate(result_dict)
+        assert restored.query == result.query
