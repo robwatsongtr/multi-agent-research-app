@@ -9,6 +9,7 @@ from agents.coordinator import CoordinatorAgent
 from agents.researcher import ResearcherAgent
 from agents.synthesizer import SynthesizerAgent
 from agents.critic import CriticAgent
+from agents.models import WorkflowResult
 from tools import WEB_SEARCH_TOOL, execute_web_search
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ def run_research_workflow(
     synthesizer_prompt: str,
     critic_prompt: str,
     tavily_api_key: str
-) -> dict[str, Any]:
+) -> WorkflowResult:
     """
     Execute the full research workflow.
 
@@ -36,14 +37,7 @@ def run_research_workflow(
         tavily_api_key: Tavily API key for web search
 
     Returns:
-        Dictionary with structure:
-        {
-            "query": str,
-            "subtasks": list[str],
-            "research_results": list[dict],
-            "synthesis": dict,
-            "critique": dict
-        }
+        WorkflowResult containing all research outputs
     """
     # Create tool executor function
     def tool_executor(tool_name: str, tool_input: dict[str, Any]) -> Any:
@@ -101,10 +95,10 @@ def run_research_workflow(
     critic = CriticAgent(client, critic_prompt)
     critique = critic.review(synthesis)
 
-    return {
-        "query": query,
-        "subtasks": subtasks,
-        "research_results": research_results,
-        "synthesis": synthesis,
-        "critique": critique
-    }
+    return WorkflowResult(
+        query=query,
+        subtasks=subtasks,
+        research_results=research_results,
+        synthesis=synthesis,
+        critique=critique
+    )

@@ -2,11 +2,11 @@
 
 import logging
 import json
-from typing import Any, cast
 from anthropic import Anthropic
 
 from agents.base import BaseAgent
-from agents.json_utils import parse_json_response
+from agents.models import ResearchResult, SynthesizedReport
+from agents.parsing import parse_llm_response
 
 logger = logging.getLogger(__name__)
 
@@ -29,27 +29,15 @@ class SynthesizerAgent(BaseAgent):
         """
         super().__init__(client, system_prompt)
 
-    def synthesize(self, findings: list[dict[str, Any]]) -> dict[str, Any]:
+    def synthesize(self, findings: list[ResearchResult]) -> SynthesizedReport:
         """
         Combine research findings into a coherent summary.
 
         Args:
-            findings: List of research findings from researcher agents
-                      Each finding should have structure from ResearcherAgent.research()
+            findings: List of ResearchResult from researcher agents
 
         Returns:
-            Dictionary with structure:
-            {
-                "summary": str,
-                "sections": [
-                    {
-                        "title": str,
-                        "content": str,
-                        "sources": [str]
-                    }
-                ],
-                "key_insights": [str]
-            }
+            SynthesizedReport with organized sections and insights
 
         Raises:
             ValueError: If the response cannot be parsed or is invalid
@@ -58,15 +46,14 @@ class SynthesizerAgent(BaseAgent):
         try:
             logger.info(f"Synthesizer processing {len(findings)} findings...")
 
-            # Format findings into a readable structure for Claude
-            findings_text = json.dumps(findings, indent=2)
+            # Convert Pydantic models to dicts for JSON serialization
+            findings_dicts = [finding.model_dump() for finding in findings]
+            findings_text = json.dumps(findings_dicts, indent=2)
             user_message = f"Here are the research findings to synthesize:\n\n{findings_text}"
 
             logger.debug(f"Synthesizer input: {user_message[:100]}...")
 
             # Call Claude to synthesize the findings
-            # Note: We could try using response_format={"type": "json_object"} but that's not
-            # supported by all models. Instead, we'll rely on robust parsing below.
             response = self.call_claude(
                 user_message=user_message,
                 max_tokens=4096,
@@ -76,21 +63,15 @@ class SynthesizerAgent(BaseAgent):
             # Parse the response to get text content
             response_text = self.parse_response(response)
 
-            # Use the shared JSON parsing utility
-            result = parse_json_response(
+            # Parse using Pydantic model
+            result = parse_llm_response(
                 response_text,
-                expected_fields=["summary", "sections", "key_insights"]
+                SynthesizedReport
             )
+
+            logger.info(f"Generated report with {len(result.sections)} sections")
+
+            return result
+
         except Exception as e:
             raise RuntimeError(f"Synthesis failed: {e}") from e
-
-        # Validate data types
-        if not isinstance(result["sections"], list):
-            raise ValueError("sections must be a list")
-
-        if not isinstance(result["key_insights"], list):
-            raise ValueError("key_insights must be a list")
-
-        logger.info(f"Generated report with {len(result['sections'])} sections")
-
-        return cast(dict[str, Any], result)

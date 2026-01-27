@@ -1,13 +1,12 @@
 """Researcher agent that executes research subtasks."""
 
 import logging
-import json
-import re
-from typing import Any, Optional, cast
+from typing import Any, Optional, Callable
 from anthropic import Anthropic
 
 from agents.base import BaseAgent
-from agents.json_utils import parse_json_response
+from agents.models import ResearchResult
+from agents.parsing import parse_llm_response
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +29,12 @@ class ResearcherAgent(BaseAgent):
         """
         super().__init__(client, system_prompt)
 
-    def research( self,
+    def research(
+        self,
         subtask: str,
         tools: Optional[list[dict[str, Any]]] = None,
-        tool_executor: Optional[Any] = None
-    ) -> dict[str, Any]:
+        tool_executor: Optional[Callable[[str, dict[str, Any]], Any]] = None
+    ) -> ResearchResult:
         """
         Research a specific subtask and return findings.
 
@@ -44,17 +44,7 @@ class ResearcherAgent(BaseAgent):
             tool_executor: Optional function to execute tools
 
         Returns:
-            Dictionary with structure:
-            {
-                "subtask": str,
-                "findings": [
-                    {
-                        "claim": str,
-                        "source": str,
-                        "details": str
-                    }
-                ]
-            }
+            ResearchResult with subtask and list of findings
 
         Raises:
             ValueError: If the response cannot be parsed or is invalid
@@ -75,16 +65,13 @@ class ResearcherAgent(BaseAgent):
             response_text = self.parse_response(response)
             logger.debug(f"Researcher response: {response_text[:100]}...")
 
-            # Use the shared JSON parsing utility
-            result = parse_json_response(
+            # Parse using Pydantic model
+            result = parse_llm_response(
                 response_text,
-                expected_fields=["subtask", "findings"]
+                ResearchResult
             )
+
+            return result
+
         except Exception as e:
             raise RuntimeError(f"Research failed: {e}") from e
-
-        # Validate findings is a list
-        if not isinstance(result["findings"], list):
-            raise ValueError("findings must be a list")
-
-        return cast(dict[str, Any], result)
