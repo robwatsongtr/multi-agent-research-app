@@ -1,7 +1,3 @@
-"""
-Base agent class for multi-agent research system.
-"""
-
 import logging
 from typing import Any, Optional, Callable, cast
 from anthropic import Anthropic
@@ -12,8 +8,6 @@ logger = logging.getLogger(__name__)
 
 class BaseAgent:
     """
-    Base class for all agents in the multi-agent research system.
-
     Provides common functionality for making API calls to Claude with
     specialized system prompts and extracting responses.
 
@@ -65,12 +59,9 @@ class BaseAgent:
             anthropic.APIError: If the API call fails
             ValueError: If tool use is requested but no executor provided
         """
-        # Build conversation history
         messages: list[MessageParam] = [{"role": "user", "content": user_message}]
 
-        # Tool use loop
         while True:
-            # Build API call - only include tools if provided
             api_params: dict[str, Any] = {
                 "model": self.model,
                 "max_tokens": max_tokens,
@@ -85,15 +76,12 @@ class BaseAgent:
             logger.debug("Calling Claude API...")
             response = self.client.messages.create(**api_params)
 
-            # Check if Claude wants to use a tool
             if response.stop_reason == "tool_use":
                 if tool_executor is None:
                     raise ValueError("Tool use requested but no tool_executor provided")
 
-                # Add Claude's response to conversation
                 messages.append({"role": "assistant", "content": response.content})
 
-                # Execute all tool uses in this response
                 tool_results: list[dict[str, Any]] = []
                 for block in response.content:
                     if block.type == "tool_use":
@@ -103,7 +91,6 @@ class BaseAgent:
 
                         logger.info(f"Claude requested tool: {tool_name}")
 
-                        # Execute the tool
                         try:
                             result = tool_executor(tool_name, tool_input)
                             tool_results.append({
@@ -112,7 +99,6 @@ class BaseAgent:
                                 "content": json.dumps(result)
                             })
                         except Exception as e:
-                            # Return error to Claude
                             logger.error(f"Tool execution failed: {e}")
                             tool_results.append({
                                 "type": "tool_result",
@@ -121,13 +107,9 @@ class BaseAgent:
                                 "is_error": True
                             })
 
-                # Add tool results to conversation
                 messages.append(cast(MessageParam, {"role": "user", "content": tool_results}))
-
-                # Continue the loop - Claude will process tool results
                 continue
 
-            # No tool use, return the final response
             return cast(Message, response)
 
     def parse_response(self, message: Message) -> str:
@@ -146,10 +128,8 @@ class BaseAgent:
         if not message.content:
             raise ValueError("Message has no content")
 
-        # Get the first content block
         first_block = message.content[0]
 
-        # Extract text based on block type
         if hasattr(first_block, 'text'):
             return first_block.text
 

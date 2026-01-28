@@ -45,27 +45,21 @@ class CoordinatorAgent(BaseAgent):
         """
         try:
             logger.info("Coordinator analyzing query...")
-            # Call Claude with the user query
             response = self.call_claude(
                 user_message=query,
                 max_tokens=2048,
                 temperature=1.0
             )
 
-            # Parse the response to get text content
             response_text = self.parse_response(response)
             logger.debug(f"Coordinator response: {response_text[:100]}...")
 
-            # Extract and parse JSON (handles markdown code blocks)
             json_text = extract_json_from_text(response_text)
             subtasks_raw = json.loads(json_text)
 
-            # Handle both formats: plain array or object with "subtasks" field
             if isinstance(subtasks_raw, list):
-                # Plain array format: ["task1", "task2"]
                 result = CoordinatorResponse(subtasks=subtasks_raw)
             elif isinstance(subtasks_raw, dict) and "subtasks" in subtasks_raw:
-                # Object format: {"subtasks": ["task1", "task2"]}
                 result = CoordinatorResponse(**subtasks_raw)
             else:
                 raise ValueError(f"Unexpected JSON format: {type(subtasks_raw)}")

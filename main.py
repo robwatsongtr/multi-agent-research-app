@@ -17,7 +17,7 @@ from config.settings import load_prompts, get_api_key, get_model, get_tavily_api
 from orchestration.workflow import run_research_workflow
 
 
-def wrap_text(text: str, width: int = 100) -> str:
+def wrap_text(text: str, width: int = 80) -> str:
     """
     Wrap text to a specified width, breaking at word boundaries.
 
@@ -28,14 +28,11 @@ def wrap_text(text: str, width: int = 100) -> str:
     Returns:
         Wrapped text with line breaks
     """
-    # Preserve paragraphs by splitting on double newlines
     paragraphs = text.split('\n\n')
     wrapped_paragraphs = []
 
     for para in paragraphs:
-        # Remove single newlines within paragraphs
         para = para.replace('\n', ' ')
-        # Wrap the paragraph
         wrapped = textwrap.fill(para, width=width, break_long_words=False, break_on_hyphens=False)
         wrapped_paragraphs.append(wrapped)
 
@@ -44,7 +41,6 @@ def wrap_text(text: str, width: int = 100) -> str:
 
 def main() -> None:
     """Main entry point for the CLI."""
-    # Parse arguments
     if len(sys.argv) < 2:
         print("Usage: python main.py \"Your research query here\" [--verbose]")
         print("\nExample:")
@@ -55,7 +51,6 @@ def main() -> None:
     query = sys.argv[1]
     verbose = "--verbose" in sys.argv
 
-    # Configure logging
     log_level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=log_level,
@@ -64,17 +59,14 @@ def main() -> None:
     )
 
     try:
-        # Load configuration
         print("Loading configuration...")
         api_key = get_api_key()
         tavily_api_key = get_tavily_api_key()
         model = get_model()
         prompts = load_prompts()
 
-        # Initialize Anthropic client
         client = Anthropic(api_key=api_key)
 
-        # Run full research workflow
         print(f"\nResearch Query: {query}")
         print("\nRunning research workflow...")
 
@@ -100,7 +92,6 @@ def main() -> None:
             for line in lines[1:]:
                 print(f"   {line}")
 
-        # Display research results
         print("\n" + "="*80)
         print("RESEARCH FINDINGS")
         print("="*80)
@@ -133,7 +124,6 @@ def main() -> None:
                     for line in details_lines[1:]:
                         print(f"              {line}")
 
-        # Display synthesized report
         print("\n" + "="*80)
         print("SYNTHESIZED RESEARCH REPORT")
         print("="*80)
@@ -158,13 +148,11 @@ def main() -> None:
 
         for i, insight in enumerate(synthesis.key_insights, 1):
             wrapped_insight = wrap_text(insight, width=77)
-            # Indent wrapped lines after the first
             lines = wrapped_insight.split('\n')
             print(f"{i}. {lines[0]}")
             for line in lines[1:]:
                 print(f"   {line}")
 
-        # Display critique
         print("\n" + "="*80)
         print("CRITIC REVIEW")
         print("="*80)

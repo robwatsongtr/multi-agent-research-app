@@ -1,10 +1,3 @@
-"""
-Pydantic models for structured data throughout the multi-agent research system.
-
-These models define the shape of data flowing between agents, replacing nested
-dictionaries with typed, validated structures.
-"""
-
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -126,3 +119,30 @@ class WorkflowResult(BaseModel):
     )
     synthesis: SynthesizedReport = Field(..., description="Synthesized report")
     critique: CriticReview = Field(..., description="Quality review")
+
+
+# Tool Models
+
+class SearchResult(BaseModel):
+    """A single search result from web search tool."""
+
+    title: str = Field(..., description="Title of the search result")
+    url: str = Field(..., description="URL of the search result")
+    content: str = Field(..., description="Content snippet from the search result")
+    score: float = Field(default=0.0, description="Relevance score of the result")
+
+
+class ToolSchema(BaseModel):
+    """Schema definition for a tool that can be used by agents."""
+
+    name: str = Field(..., description="Tool name")
+    description: str = Field(..., description="Tool description for LLM")
+    input_schema: dict = Field(..., description="JSON schema for tool inputs")
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary format expected by Anthropic API."""
+        return {
+            "name": self.name,
+            "description": self.description,
+            "input_schema": self.input_schema
+        }

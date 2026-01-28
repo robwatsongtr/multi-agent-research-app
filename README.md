@@ -115,24 +115,6 @@ python main.py "What are the latest developments in quantum computing?"
 python main.py "What are the latest developments in quantum computing?" --verbose
 ```
 
-## How It Works
-
-### Two-Stage LLM Parsing
-
-**The Challenge:** LLMs produce non-deterministic output - even with perfect prompts, Claude might return JSON wrapped in markdown code blocks, add explanatory text, or vary formatting.
-
-**The Solution:** Two-stage parsing separates concerns:
-
-```python
-# Stage 1: Lenient extraction (handles LLM quirks)
-json_text = extract_json_from_text(response_text)
-# Strips markdown, finds JSON in messy output
-
-# Stage 2: Strict validation (type safety)
-result = ResearchResult(**json.loads(json_text))
-# Pydantic validates structure and types
-```
-
 ### Agent Implementation
 
 Agents inherit from `BaseAgent` and implement domain logic:

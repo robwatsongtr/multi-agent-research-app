@@ -46,28 +46,22 @@ class CriticAgent(BaseAgent):
         try:
             logger.info("Critic analyzing report...")
 
-            # Convert Pydantic model to dict for JSON serialization
             report_dict = report.model_dump()
             report_text = json.dumps(report_dict, indent=2)
             user_message = f"Here is the research report to review:\n\n{report_text}"
 
             logger.debug(f"Critic input: {user_message[:100]}...")
 
-            # Call Claude to review the report
             response = self.call_claude(
                 user_message=user_message,
                 max_tokens=4096,
-                temperature=0.3  # Low temperature for consistent, analytical output
+                temperature=0.3
             )
 
-            # Parse the response to get text content
             response_text = self.parse_response(response)
-
-            # Extract and parse JSON (handles markdown code blocks)
             json_text = extract_json_from_text(response_text)
             result_dict = json.loads(json_text)
 
-            # Validate using Pydantic model
             result = CriticReview(**result_dict)
 
             issue_count = len(result.issues)

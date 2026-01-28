@@ -53,7 +53,6 @@ class ResearcherAgent(BaseAgent):
         """
         try:
             logger.debug(f"Researcher processing subtask: {subtask[:50]}...")
-            # Call Claude with the subtask
             response = self.call_claude(
                 user_message=subtask,
                 max_tokens=4096,
@@ -62,15 +61,12 @@ class ResearcherAgent(BaseAgent):
                 tool_executor=tool_executor
             )
 
-            # Parse the response to get text content
             response_text = self.parse_response(response)
             logger.debug(f"Researcher response: {response_text[:100]}...")
 
-            # Extract and parse JSON (handles markdown code blocks)
             json_text = extract_json_from_text(response_text)
             result_dict = json.loads(json_text)
 
-            # Validate using Pydantic model
             result = ResearchResult(**result_dict)
 
             return result

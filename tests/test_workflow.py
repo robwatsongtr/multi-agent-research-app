@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 from anthropic.types import Message, TextBlock
 
 from orchestration.workflow import run_research_workflow
-from agents.models import WorkflowResult, ResearchResult, SynthesizedReport, CriticReview
+from agents.models import WorkflowResult, ResearchResult, SynthesizedReport, CriticReview, SearchResult
 
 
 class TestWorkflow:
@@ -17,9 +17,9 @@ class TestWorkflow:
         """Test complete workflow returns WorkflowResult."""
         client = Mock()
 
-        # Mock web search tool
+        # Mock web search tool - returns SearchResult Pydantic models
         mock_web_search.return_value = [
-            {"title": "Result", "url": "https://example.com", "content": "Content"}
+            SearchResult(title="Result", url="https://example.com", content="Content", score=0.9)
         ]
 
         # Mock coordinator response
@@ -137,9 +137,9 @@ class TestWorkflow:
         """Test workflow handles tool use in researcher."""
         client = Mock()
 
-        # Mock web search
+        # Mock web search - returns SearchResult Pydantic models
         mock_web_search.return_value = [
-            {"title": "Search Result", "url": "https://test.com", "content": "Data"}
+            SearchResult(title="Search Result", url="https://test.com", content="Data", score=0.85)
         ]
 
         # Mock coordinator

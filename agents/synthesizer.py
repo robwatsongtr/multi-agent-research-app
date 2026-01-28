@@ -46,28 +46,22 @@ class SynthesizerAgent(BaseAgent):
         try:
             logger.info(f"Synthesizer processing {len(findings)} findings...")
 
-            # Convert Pydantic models to dicts for JSON serialization
             findings_dicts = [finding.model_dump() for finding in findings]
             findings_text = json.dumps(findings_dicts, indent=2)
             user_message = f"Here are the research findings to synthesize:\n\n{findings_text}"
 
             logger.debug(f"Synthesizer input: {user_message[:100]}...")
 
-            # Call Claude to synthesize the findings
             response = self.call_claude(
                 user_message=user_message,
                 max_tokens=4096,
-                temperature=0.7  # Lower temperature for more consistent JSON output
+                temperature=0.7
             )
 
-            # Parse the response to get text content
             response_text = self.parse_response(response)
-
-            # Extract and parse JSON (handles markdown code blocks)
             json_text = extract_json_from_text(response_text)
             result_dict = json.loads(json_text)
 
-            # Validate using Pydantic model
             result = SynthesizedReport(**result_dict)
 
             logger.info(f"Generated report with {len(result.sections)} sections")

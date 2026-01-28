@@ -39,38 +39,37 @@ def run_research_workflow(
     Returns:
         WorkflowResult containing all research outputs
     """
-    # Create tool executor function
-    def tool_executor(tool_name: str, tool_input: dict[str, Any]) -> Any:
-        """Execute tools requested by the researcher agent."""
+    def tool_executor(tool_name: str, tool_input: dict[str, Any]) -> list[dict[str, Any]]:
+        """
+        Execute tools requested by the researcher agent.
+
+        Returns results as list of dicts for Anthropic API compatibility.
+        """
         if tool_name == "web_search":
             search_query = tool_input["query"]
             logger.info(f"Searching web for: {search_query}")
-            result = execute_web_search(search_query, tavily_api_key)
-            logger.debug(f"Found {len(result)} results")
+            search_results = execute_web_search(search_query, tavily_api_key)
+            logger.debug(f"Found {len(search_results)} results")
 
-            return result
+            return [result.model_dump() for result in search_results]
         else:
             raise ValueError(f"Unknown tool: {tool_name}")
 
-    # Get current date for context
     current_date = datetime.now().strftime("%B %d, %Y")
     current_year = datetime.now().year
     previous_year = current_year - 1
 
-    # Inject current date into researcher prompt using template placeholders
     researcher_prompt_with_date = researcher_prompt.format(
         current_date=current_date,
         current_year=current_year,
         previous_year=previous_year
     )
 
-    # Step 1: Coordinator breaks down query into subtasks
     logger.info("Breaking query into subtasks...")
     coordinator = CoordinatorAgent(client, coordinator_prompt)
     subtasks = coordinator.coordinate(query)
     logger.info(f"Generated {len(subtasks)} subtasks")
 
-    # Step 2: Researcher investigates each subtask
     logger.info(f"Starting research on {len(subtasks)} subtasks...")
     researcher = ResearcherAgent(client, researcher_prompt_with_date)
     research_results = []
@@ -79,18 +78,16 @@ def run_research_workflow(
         logger.info(f"[{i}/{len(subtasks)}] Researching subtask: {subtask}")
         findings = researcher.research(
             subtask,
-            tools=[WEB_SEARCH_TOOL],
+            tools=[WEB_SEARCH_TOOL.to_dict()],
             tool_executor=tool_executor
         )
         research_results.append(findings)
         logger.info(f"Completed subtask {i}/{len(subtasks)}")
 
-    # Step 3: Synthesizer combines findings into coherent report
     logger.info("Synthesizing research findings...")
     synthesizer = SynthesizerAgent(client, synthesizer_prompt)
     synthesis = synthesizer.synthesize(research_results)
 
-    # Step 4: Critic reviews the synthesized report
     logger.info("Running critic review...")
     critic = CriticAgent(client, critic_prompt)
     critique = critic.review(synthesis)
