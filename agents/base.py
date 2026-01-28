@@ -17,7 +17,7 @@ class BaseAgent:
         model: Claude model to use for API calls
     """
 
-    def __init__( self,
+    def __init__(self,
         client: Anthropic,
         system_prompt: str,
         model: str = "claude-sonnet-4-5-20250929"
@@ -34,7 +34,7 @@ class BaseAgent:
         self.system_prompt = system_prompt
         self.model = model
 
-    def call_claude( self,
+    def call_claude(self,
         user_message: str,
         max_tokens: int = 4096,
         temperature: float = 1.0,
